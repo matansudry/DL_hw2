@@ -28,33 +28,33 @@ def main(cfg: DictConfig) -> None:
     """
     main_utils.init(cfg)
     logger = TrainLogger(exp_name_prefix=cfg['main']['experiment_name_prefix'], logs_dir=cfg['main']['paths']['logs'])
+    print(logger)
     logger.write(OmegaConf.to_yaml(cfg))
 
     # Set seed for results reproduction
     main_utils.set_seed(cfg['main']['seed'])
 
     # Load dataset
-    train_dataset = MyDataset(image_path='data/train2014',
-                              questions_path='data/v2_OpenEnded_mscoco_train2014_questions.json',
-                              answers_path='data/v2_mscoco_train2014_annotations.json',
+    train_dataset = MyDataset(image_path='../../../datashare/train2014',
+                              questions_path='../../../datashare/v2_OpenEnded_mscoco_train2014_questions.json',
+                              answers_path='../../../datashare/v2_mscoco_train2014_annotations.json',
                               train=True,
                               answerable_only = False
                              )
-    val_dataset = MyDataset(image_path='data/val2014',
-                          questions_path='data/v2_OpenEnded_mscoco_val2014_questions.json',
-                          answers_path='data/v2_mscoco_val2014_annotations.json',
-                          train=False,
-                          answerable_only = False
-                         )
+    val_dataset = MyDataset(image_path='../../../datashare/val2014',
+                              questions_path='../../../datashare/v2_OpenEnded_mscoco_val2014_questions.json',
+                              answers_path='../../../datashare/v2_mscoco_val2014_annotations.json',
+                              train=False,
+                              answerable_only = False
+                             )
 
     train_loader = DataLoader(train_dataset, cfg['train']['batch_size'], shuffle=True,
                               num_workers=cfg['main']['num_workers'])
     eval_loader = DataLoader(val_dataset, cfg['train']['batch_size'], shuffle=True,
                              num_workers=cfg['main']['num_workers'])
-    raise
 
     # Init model
-    model = MyModel(num_hid=cfg['train']['num_hid'], dropout=cfg['train']['dropout'])
+    model = MyModel()#(num_hid=cfg['train']['num_hid'], dropout=cfg['train']['dropout'])
 
     # TODO: Add gpus_to_use
     if cfg['main']['parallel']:

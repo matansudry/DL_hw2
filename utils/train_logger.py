@@ -11,7 +11,7 @@ from typing import Dict
 from utils import main_utils
 from datetime import datetime
 from torch.optim import Optimizer
-from utils.types import PathT, InputSample
+from utils.types import PathT, InputSample, InputSample2
 from torch.utils.tensorboard import SummaryWriter
 
 
@@ -75,12 +75,14 @@ class TrainLogger:
         """
         self.tensorboard_writer.add_scalar(tag, scalar_value, step)
 
-    def report_graph(self, model: nn.Module, model_input: InputSample) -> None:
+    def report_graph(self, model: nn.Module, model_input: InputSample2) -> None:
         """
         Report a model structure to tensorboard
         :param model: a model instance
         :param model_input: tensor or list of tensors
         """
+#         print("model_input = ", model_input)
+#         print("model_input.dtype = ", model_input.dtype)
         self.tensorboard_writer.add_graph(model, model_input)
 
     def save_model(self, model: nn.Module, epoch: int, optimizer: Optimizer = None) -> None:

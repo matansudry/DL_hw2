@@ -131,7 +131,7 @@ class ResNetClassifier(nn.Module):
         self.pooling_type = pooling_type
         self.pooling_params = pooling_params
         self.feature_extractor = self._make_feature_extractor()
-        self.liner = torch.nn.Linear(100, self.out_classes)
+        self.linear = torch.nn.Linear(50176, self.out_classes)
 
 #         super().__init__(
 #             in_size, out_classes, channels, pool_every, hidden_dims, **kwargs
@@ -165,7 +165,7 @@ class ResNetClassifier(nn.Module):
                 temp_in_channels = self.channels[i-1]
                 temp_channels = []
                 temp_kernel_sizes = []
-                #layers.append(nn.AvgPool2d(self.pooling_params['kernel_size']))
+                layers.append(nn.AvgPool2d(self.pooling_params['kernel_size']))
         temp_channels.append(self.channels[N-1])
         temp_kernel_sizes.append(3)
         layers.append(ResidualBlock(
@@ -177,14 +177,16 @@ class ResNetClassifier(nn.Module):
                 activation_type=self.activation_type))
         if ((N % self.pool_every)==0):
             layers.append(nn.AvgPool2d(self.pooling_params['kernel_size']))
+        # add to go to 1x1
+        layers.append(nn.AvgPool2d(3))
         seq = nn.Sequential(*layers)
         return seq
     
     
     def forward(self, x):
         features = self.feature_extractor(x)
-        features = features.view(features.size(0), -1)
-        features = self.liner(features)
+#         features = features.view(features.size(0), -1)
+#         features = self.linear(features)
         return features
 
     
@@ -223,14 +225,16 @@ class Attention(nn.Module):
         super(Attention, self).__init__()
         self.v_conv = nn.Conv2d(v_features, mid_features, 1, bias=False)  # let self.lin take care of bias
         self.q_lin = nn.Linear(q_features, mid_features)
+#         self.v_lin = nn.Linear(v_features, mid_features) # added by us
         self.x_conv = nn.Conv2d(mid_features, glimpses, 1)
+#         self.x_conv_ours = nn.Linear(mid_features, glimpses)# ours
 
         self.drop = nn.Dropout(drop)
         self.relu = nn.ReLU(inplace=True)
 
     def forward(self, img, ques):
-        img = self.v_conv(self.drop(img))
         ques = self.q_lin(self.drop(ques))
+        img = self.v_conv(self.drop(img))
         ques = tile_2d_over_nd(ques, img)
         x = self.relu(img + ques)
         x = self.x_conv(self.drop(x))
@@ -269,8 +273,9 @@ class MyModel(nn.Module, metaclass=ABCMeta):
 #         test_params = [
         self.img_encoder = ResNetClassifier(
             in_size=(3,224,224),
-            out_classes=1024,
-            channels=[32, 64, 64, 64, 64, 128, 128, 128, 128, 256, 256, 256, 256, 512, 512, 512, 512, 1024, 1024, 1024, 1024],
+            out_classes=2048,
+#             channels=[32, 64, 64, 64, 64, 128, 128, 128, 128, 256, 256, 256, 256, 512, 512, 512, 512, 1024, 1024, 1024, 1024],
+            channels=[32, 64, 128, 256, 512, 1024, 2048],
             pool_every=2,
             activation_type='relu',
             activation_params=dict(),
@@ -299,23 +304,18 @@ class MyModel(nn.Module, metaclass=ABCMeta):
             nn.Linear(2 * 2048 + 1024, 512),
             nn.ReLU(),
             nn.Dropout(0.5),
-            nn.Linear(512, 3129),
+            nn.Linear(512, 2410),
         )
 #         self.img_encoder = ConvClassifier(**test_params)
 
     def forward(self, x) -> Tensor:
-#         img = x[0]
-#         temp_img = self.img_encoder(img)
-#         print("temp_img.shape = ", temp_img.shape)
-#         raise
+        temp_img = x[0]
+        img = self.img_encoder(temp_img)
         ques = x[1]
         q_len = x[2]
         ques = self.text(ques, list(q_len.data))
-        img = torch.rand((2,2048,1,1))
         a = self.attention(img, ques)
         img = apply_attention(img, a)
-
         combined = torch.cat([img, ques], dim=1)
         answer = self.classifier(combined)
-
         return answer

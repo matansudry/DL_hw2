@@ -8,6 +8,11 @@ from typing import Dict
 from torch import Tensor
 from omegaconf import DictConfig
 
+def batch_accuracy(predicted, true):
+    _, predicted_index = predicted.max(dim=1, keepdim=True)
+    agreeing = true.gather(dim=1, index=predicted_index)
+    return (agreeing)
+
 
 def compute_score_with_logits(logits: Tensor, labels: Tensor) -> Tensor:
     """

@@ -1,3 +1,9 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[1]:
+
+
 """
 Here, we create a custom dataset
 """
@@ -18,7 +24,13 @@ from torch.utils.data import DataLoader
 from typing import Any, Tuple, Dict, List
 import torchvision.transforms as transforms
 from PIL import Image
+from models.base_model import MyModel
+from torch.nn.utils.rnn import pack_padded_sequence
 # from __future__ import print_function
+
+
+# In[2]:
+
 
 class CocoImages(data.Dataset):
     """ Dataset for MSCOCO images located in a folder on the filesystem """
@@ -51,7 +63,11 @@ class CocoImages(data.Dataset):
 
     def __len__(self):
         return len(self.sorted_ids)
-    
+
+
+# In[3]:
+
+
 class MyDataset(data.Dataset):
     """
     Custom dataset template. Implement the empty functions.
@@ -72,7 +88,7 @@ class MyDataset(data.Dataset):
             dataset_type = "val"
             
         #load question vocab
-        with open("data/cache/question_vocab_"+dataset_type, 'r') as fd:
+        with open("../data/cache/question_vocab_"+dataset_type, 'r') as fd:
             vocab_json = json.load(fd)
         
 
@@ -81,7 +97,7 @@ class MyDataset(data.Dataset):
         self.vocab = vocab_json
         self.token_to_index = self.vocab#['question']
         
-        with open("data/cache/trainval_ans2label.pkl", "rb") as f:
+        with open("../data/cache/trainval_ans2label.pkl", "rb") as f:
             unpickler = pickle.Unpickler(f)
             # if file is not empty scores will be equal
             # to the value unpickled
@@ -92,33 +108,33 @@ class MyDataset(data.Dataset):
         print("files upload was done")
         
         #load Q
-        if os.path.isfile("data/questions_"+dataset_type):
-            self.questions = torch.load("data/questions_"+dataset_type)
+        if os.path.isfile("../data/questions_"+dataset_type):
+            self.questions = torch.load("../data/questions_"+dataset_type)
         else:
             self.questions = list(self.prepare_questions())
             self.questions = [self._encode_question(q, self.token_to_index) for q in self.questions] 
-            torch.save(self.questions, "data/questions_"+dataset_type)
+            torch.save(self.questions, "../data/questions_"+dataset_type)
         
         print("questions done")
         
         #change Q to Q dict    
-        if os.path.isfile("data/questions_dict_"+dataset_type):
-            with open("data/questions_dict_"+dataset_type, 'rb') as handle:
+        if os.path.isfile("../data/questions_dict_"+dataset_type):
+            with open("../data/questions_dict_"+dataset_type, 'rb') as handle:
                 self.questions_dict = pickle.load(handle)
         else:
             self.questions_dict = self.questions_to_dict()
-            with open("data/questions_dict_"+dataset_type, 'wb') as handle:
+            with open("../data/questions_dict_"+dataset_type, 'wb') as handle:
                 pickle.dump(self.questions_dict, handle)
                 
         print("questions dict done")
                 
         #Load question_id_to_image_id
-        if os.path.isfile("data/question_id_to_image_id_"+dataset_type):
-            with open("data/question_id_to_image_id_"+dataset_type, 'r') as fd:
+        if os.path.isfile("../data/question_id_to_image_id_"+dataset_type):
+            with open("../data/question_id_to_image_id_"+dataset_type, 'r') as fd:
                 self.question_id_to_image_id = json.load(fd)
         else:
             self.question_id_to_image_id = self.question_id_to_image_id()
-            with open("data/question_id_to_image_id_"+dataset_type, 'w') as fd:
+            with open("../data/question_id_to_image_id_"+dataset_type, 'w') as fd:
                 json.dump(self.question_id_to_image_id, fd)
 
         print("question_id_to_image_id done")
@@ -126,40 +142,40 @@ class MyDataset(data.Dataset):
         
         #load A
         self.answerable_only = answerable_only
-        if os.path.isfile("data/answerable_with_labels_only_"+dataset_type+"_"+str(answerable_only)):
-            with open("data/answerable_with_labels_only_"+dataset_type+"_"+str(answerable_only), 'rb') as handle:
+        if os.path.isfile("../data/answerable_with_labels_only_"+dataset_type+"_"+str(answerable_only)):
+            with open("../data/answerable_with_labels_only_"+dataset_type+"_"+str(answerable_only), 'rb') as handle:
                 self.answerable = pickle.load(handle)
         else:
             #preprocess A
             self.answerable = self.preprocess_answers(train)
             if self.answerable_only:
                 self.answerable = self._find_answerable()
-            with open("data/answerable_with_labels_only_"+dataset_type+"_"+str(answerable_only), 'wb') as handle:
+            with open("../data/answerable_with_labels_only_"+dataset_type+"_"+str(answerable_only), 'wb') as handle:
                 pickle.dump(self.answerable, handle)
         
         print("answers done")
         
         #load I
-        if os.path.isfile("data/images_"+dataset_type):
-            with open("data/images_"+dataset_type, 'rb') as handle:
+        if os.path.isfile("../data/images_"+dataset_type):
+            with open("../data/images_"+dataset_type, 'rb') as handle:
                 self.images = pickle.load(handle)
 
         else:
             #preprocess A
             self.images = self.load_images()
-            with open("data/images_"+dataset_type, 'wb') as handle:
+            with open("../data/images_"+dataset_type, 'wb') as handle:
                 pickle.dump(self.images, handle)
         
         print("images done")
         
         #load coco_images_to_dict
-        if os.path.isfile("data/coco_images_to_dict"+dataset_type):
-            with open("data/coco_images_to_dict"+dataset_type, 'rb') as handle:
+        if os.path.isfile("../data/coco_images_to_dict"+dataset_type):
+            with open("../data/coco_images_to_dict"+dataset_type, 'rb') as handle:
                 self.images_dict = pickle.load(handle)
 
         else:
             self.coco_images_to_dict()
-            with open("data/coco_images_to_dict"+dataset_type, 'wb') as handle:
+            with open("../data/coco_images_to_dict"+dataset_type, 'wb') as handle:
                 pickle.dump(self.images_dict, handle)
                 
         print("coco_images_to_dict done")
@@ -208,15 +224,15 @@ class MyDataset(data.Dataset):
                     
     def preprocess_answers(self, train=True):
         if train:
-            with open("data/cache/train_target.pkl", "rb") as f:
+            with open("../data/cache/train_target.pkl", "rb") as f:
                 unpickler = pickle.Unpickler(f)
                 scores = unpickler.load()
         else:
-            with open("data/cache/val_target.pkl", "rb") as f:
+            with open("../data/cache/val_target.pkl", "rb") as f:
                 unpickler = pickle.Unpickler(f)
                 scores = unpickler.load()  
 
-        with open("data/cache/trainval_ans2label.pkl", "rb") as f:
+        with open("../data/cache/trainval_ans2label.pkl", "rb") as f:
             unpickler = pickle.Unpickler(f)
             # if file is not empty scores will be equal
             # to the value unpickled
@@ -279,3 +295,55 @@ class MyDataset(data.Dataset):
             images_dict[image[0]] = cnt
             cnt +=1
         self.images_dict = images_dict
+    def num_tokens(self):
+        return len(self.vocab) + 1
+
+
+# # In[4]:
+
+
+# train_dataset = MyDataset(image_path='../../../datashare/train2014',
+#                           questions_path='../../../datashare/v2_OpenEnded_mscoco_train2014_questions.json',
+#                           answers_path='../../../datashare/v2_mscoco_train2014_annotations.json',
+#                           train=True,
+#                           answerable_only = False
+#                          )
+
+
+# # In[5]:
+
+
+# train_dataset = MyDataset(image_path='../../../datashare/val2014',
+#                           questions_path='../../../datashare/v2_OpenEnded_mscoco_val2014_questions.json',
+#                           answers_path='../../../datashare/v2_mscoco_val2014_annotations.json',
+#                           train=False,
+#                           answerable_only = False
+#                          )
+
+
+# # In[6]:
+
+
+# train_loader = DataLoader(train_dataset, 2, shuffle=True, num_workers=8)
+
+
+# # In[9]:
+
+
+# from models.base_model import MyModel
+# model = MyModel()
+# # model = torch.nn.DataParallel(model)
+# model = model.cuda()
+# for i, img, ans, ques, _, q_len in train_loader:
+#     img = img.cuda()
+#     ans = ans.cuda()
+#     ques = ques.cuda()
+#     q_len = q_len.cuda()
+#     out = model((img, ques, q_len))
+
+
+# # In[ ]:
+
+
+
+
