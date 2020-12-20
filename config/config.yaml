@@ -16,6 +16,13 @@ main:
     train: 'data/train.pkl'
     validation: 'data/validation.pkl'
     logs: 'logs/'
+    train_images: 'data/train2014'
+    train_qeustions: 'data/v2_OpenEnded_mscoco_train2014_questions.json'
+    train_answers: 'data/v2_mscoco_train2014_annotations.json'
+    val_images: 'data/val2014'
+    val_qeustions: 'data/v2_OpenEnded_mscoco_val2014_questions.json'
+    val_answers: 'data/v2_mscoco_val2014_annotations.json'
+    
 train:
   num_epochs: 15
   grad_clip: 0.25

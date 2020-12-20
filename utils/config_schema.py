@@ -14,6 +14,12 @@ CFG_SCHEMA = {
             'train': str,
             'validation': str,
             'logs': str,
+            'train_images': str,
+            'train_qeustions': str,
+            'train_answers': str,
+            'val_images': str,
+            'val_qeustions': str,
+            'val_answers': str,
         },
     },
     'train': {

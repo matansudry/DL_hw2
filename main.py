@@ -7,12 +7,13 @@ import torch
 import hydra
 
 from train import train
-from dataset import MyDataset
+from dataset import MyDataset, CocoImages
 from models.base_model import MyModel
 from torch.utils.data import DataLoader
-from utils import main_utils, train_utils
+from utils import main_utils, train_utils, data_loader
 from utils.train_logger import TrainLogger
 from omegaconf import DictConfig, OmegaConf
+import os
 
 
 torch.backends.cudnn.benchmark = True
@@ -20,6 +21,7 @@ torch.backends.cudnn.benchmark = True
 
 @hydra.main(config_path="config", config_name='config')
 def main(cfg: DictConfig) -> None:
+    print("current dict = ", os.getcwd())
     """
     Run the code following a given configuration
     :param cfg: configuration file retrieved from hydra framework
@@ -32,13 +34,24 @@ def main(cfg: DictConfig) -> None:
     main_utils.set_seed(cfg['main']['seed'])
 
     # Load dataset
-    train_dataset = MyDataset(path=cfg['main']['paths']['train'])
-    val_dataset = MyDataset(path=cfg['main']['paths']['validation'])
+    train_dataset = MyDataset(image_path='data/train2014',
+                              questions_path='data/v2_OpenEnded_mscoco_train2014_questions.json',
+                              answers_path='data/v2_mscoco_train2014_annotations.json',
+                              train=True,
+                              answerable_only = False
+                             )
+    val_dataset = MyDataset(image_path='data/val2014',
+                          questions_path='data/v2_OpenEnded_mscoco_val2014_questions.json',
+                          answers_path='data/v2_mscoco_val2014_annotations.json',
+                          train=False,
+                          answerable_only = False
+                         )
 
     train_loader = DataLoader(train_dataset, cfg['train']['batch_size'], shuffle=True,
                               num_workers=cfg['main']['num_workers'])
     eval_loader = DataLoader(val_dataset, cfg['train']['batch_size'], shuffle=True,
                              num_workers=cfg['main']['num_workers'])
+    raise
 
     # Init model
     model = MyModel(num_hid=cfg['train']['num_hid'], dropout=cfg['train']['dropout'])
