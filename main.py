@@ -35,32 +35,49 @@ def main(cfg: DictConfig) -> None:
     main_utils.set_seed(cfg['main']['seed'])
 
     # Load dataset
-    train_dataset = MyDataset(image_path='../../../datashare/train2014',
-                              questions_path='../../../datashare/v2_OpenEnded_mscoco_train2014_questions.json',
-                              answers_path='../../../datashare/v2_mscoco_train2014_annotations.json',
+    train_dataset = MyDataset(image_path=cfg['main']['paths']['train_images'],
+                              questions_path=cfg['main']['paths']['train_qeustions'],
+                              answers_path=cfg['main']['paths']['train_answers'],
                               train=True,
                               answerable_only = False
                              )
-    val_dataset = MyDataset(image_path='../../../datashare/val2014',
-                              questions_path='../../../datashare/v2_OpenEnded_mscoco_val2014_questions.json',
-                              answers_path='../../../datashare/v2_mscoco_val2014_annotations.json',
+    val_dataset = MyDataset(image_path=cfg['main']['paths']['val_images'],
+                              questions_path=cfg['main']['paths']['val_qeustions'],
+                              answers_path=cfg['main']['paths']['val_answers'],
                               train=False,
                               answerable_only = False
                              )
-
+    
+    
     train_loader = DataLoader(train_dataset, cfg['train']['batch_size'], shuffle=True,
                               num_workers=cfg['main']['num_workers'])
-    eval_loader = DataLoader(val_dataset, cfg['train']['batch_size'], shuffle=True,
+    eval_loader = DataLoader(val_dataset, cfg['train']['batch_size'], shuffle=False,
                              num_workers=cfg['main']['num_workers'])
 
     # Init model
-    model = MyModel()#(num_hid=cfg['train']['num_hid'], dropout=cfg['train']['dropout'])
+    model = (
+        image_in_size=cfg['train']['image_in_size'],
+        img_encoder_out_classes=cfg['train']['img_encoder_out_classes'],
+        img_encoder_channels=cfg['train']['img_encoder_channels'],
+        img_encoder_batchnorm=cfg['train']['img_encoder_batchnorm'],
+        img_encoder_dropout=cfg['train']['img_encoder_dropout'],
+        text_embedding_tokens=cfg['train']['text_embedding_tokens'],
+        text_embedding_features=cfg['train']['text_embedding_features'],
+        text_lstm_features=cfg['train']['text_lstm_features'],
+        text_dropout=cfg['train']['text_dropout'],
+        attention_mid_features=cfg['train']['attention_mid_features'],
+        attention_glimpses=cfg['train']['attention_glimpses'],
+        attention_dropout=cfg['train']['attention_dropout'],
+        classifier_dropout=cfg['train']['classifier_dropout'],
+        classifier_mid_features=cfg['train']['classifier_mid_features'],
+        classifier_out_classes=cfg['train']['classifier_out_classes']
+        )
 
-    # TODO: Add gpus_to_use
     if cfg['main']['parallel']:
         model = torch.nn.DataParallel(model)
 
     if torch.cuda.is_available():
+        torch.cuda.empty_cache()
         model = model.cuda()
 
     logger.write(main_utils.get_model_string(model))

@@ -63,6 +63,10 @@ def train(model: nn.Module, train_loader: DataLoader, eval_loader: DataLoader, t
                 
 
             y_hat = model((img, ques, q_len))
+            img_size = img.size(0)
+            img = None
+            ques = None
+            q_len = None
             nll = -loss_func(y_hat)
             loss = (nll * ans).sum(dim=1).mean()
 
@@ -80,7 +84,7 @@ def train(model: nn.Module, train_loader: DataLoader, eval_loader: DataLoader, t
             batch_score = train_utils.batch_accuracy(y_hat, ans.data).sum()
             metrics['train_score'] += batch_score.item()
 
-            metrics['train_loss'] += loss.item() * img.size(0)
+            metrics['train_loss'] += loss.item() * img_size
 
 #             # Report model to tensorboard
 #             if epoch == 0 and i == 0:
@@ -132,7 +136,7 @@ def evaluate(model: nn.Module, dataloader: DataLoader) -> Scores:
     score = 0
     loss = 0
 
-    for i, img, ans, ques, _, q_len in train_loader:
+    for img, ans, ques, _, q_len in dataloader:
         if torch.cuda.is_available():
             img = img.cuda()
             ans = ans.cuda()
@@ -140,7 +144,9 @@ def evaluate(model: nn.Module, dataloader: DataLoader) -> Scores:
             q_len = q_len.cuda()
 
         y_hat = model((img, ques, q_len))
-
+        img = None
+        ques = None
+        q_len = None
         loss += nn.functional.binary_cross_entropy_with_logits(y_hat, ans)
         score += train_utils.compute_score_with_logits(y_hat, ans).sum().item()
 

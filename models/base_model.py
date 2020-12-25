@@ -13,7 +13,7 @@ import torch.nn.functional as F
 
 
 
-POOLINGS = {"avg": nn.AvgPool2d, "max": nn.MaxPool2d}
+#POOLINGS = {"avg": nn.AvgPool2d, "max": nn.MaxPool2d}
 
 class ResidualBlock(nn.Module):
     """
@@ -131,7 +131,7 @@ class ResNetClassifier(nn.Module):
         self.pooling_type = pooling_type
         self.pooling_params = pooling_params
         self.feature_extractor = self._make_feature_extractor()
-        self.linear = torch.nn.Linear(50176, self.out_classes)
+        #self.linear = torch.nn.Linear(50176, self.out_classes)
 
 #         super().__init__(
 #             in_size, out_classes, channels, pool_every, hidden_dims, **kwargs
@@ -172,13 +172,14 @@ class ResNetClassifier(nn.Module):
                 in_channels=temp_in_channels,
                 channels=temp_channels,
                 kernel_sizes=temp_kernel_sizes,
-                batchnorm=self.batchnorm,
-                dropout=self.dropout,
+                batchnorm=False,#self.batchnorm,
+                dropout=0, #self.dropout,
                 activation_type=self.activation_type))
         if ((N % self.pool_every)==0):
             layers.append(nn.AvgPool2d(self.pooling_params['kernel_size']))
         # add to go to 1x1
         layers.append(nn.AvgPool2d(3))
+        layers.append(nn.AvgPool2d(10))
         seq = nn.Sequential(*layers)
         return seq
     
@@ -275,36 +276,37 @@ class MyModel(nn.Module, metaclass=ABCMeta):
             in_size=(3,224,224),
             out_classes=2048,
 #             channels=[32, 64, 64, 64, 64, 128, 128, 128, 128, 256, 256, 256, 256, 512, 512, 512, 512, 1024, 1024, 1024, 1024],
-            channels=[32, 64, 128, 256, 512, 1024, 2048],
-            pool_every=2,
+#             channels=[32, 64, 128, 256, 512, 1024],
+            channels=[32, 128, 256, 512, 1024],
+            pool_every=4, #2,
             activation_type='relu',
             activation_params=dict(),
             pooling_type='avg',
-            pooling_params=dict(kernel_size=2),
+            pooling_params=dict(kernel_size=3),
             batchnorm=True,
             dropout=0.1,
         )
         self.text = TextProcessor(
             embedding_tokens=15193,
-            embedding_features=300,
+            embedding_features=100, #300,
             lstm_features=1024,
             drop=0.5,
         )
         
         self.attention = Attention(
-            v_features=2048,
+            v_features=1024,#2048,
             q_features=1024,
-            mid_features=512,
+            mid_features=128,
             glimpses=2,
             drop=0.5,
         )
         
         self.classifier = nn.Sequential(
             nn.Dropout(0.5),
-            nn.Linear(2 * 2048 + 1024, 512),
+            nn.Linear(2 * 1024 + 1024, 128), #(2*2048+1024,256)
             nn.ReLU(),
             nn.Dropout(0.5),
-            nn.Linear(512, 2410),
+            nn.Linear(128, 2410),
         )
 #         self.img_encoder = ConvClassifier(**test_params)
 

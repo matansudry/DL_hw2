@@ -1,8 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[1]:
-
 
 """
 Here, we create a custom dataset
@@ -26,11 +21,6 @@ import torchvision.transforms as transforms
 from PIL import Image
 from models.base_model import MyModel
 from torch.nn.utils.rnn import pack_padded_sequence
-# from __future__ import print_function
-
-
-# In[2]:
-
 
 class CocoImages(data.Dataset):
     """ Dataset for MSCOCO images located in a folder on the filesystem """
@@ -213,7 +203,6 @@ class MyDataset(data.Dataset):
     def load_images(self):
         transform = self.get_transform(target_size=224, central_fraction=0.875)
         dataset = [CocoImages(self.image_features_path, transform=transform)]
-    #     dataset = Composite(dataset)
         return dataset
     
     @property
@@ -234,8 +223,6 @@ class MyDataset(data.Dataset):
 
         with open("../data/cache/trainval_ans2label.pkl", "rb") as f:
             unpickler = pickle.Unpickler(f)
-            # if file is not empty scores will be equal
-            # to the value unpickled
             dict_answers = unpickler.load()
             self.number_of_answers_per_question = len(dict_answers)
 
@@ -298,51 +285,6 @@ class MyDataset(data.Dataset):
     def num_tokens(self):
         return len(self.vocab) + 1
 
-
-# # In[4]:
-
-
-# train_dataset = MyDataset(image_path='../../../datashare/train2014',
-#                           questions_path='../../../datashare/v2_OpenEnded_mscoco_train2014_questions.json',
-#                           answers_path='../../../datashare/v2_mscoco_train2014_annotations.json',
-#                           train=True,
-#                           answerable_only = False
-#                          )
-
-
-# # In[5]:
-
-
-# train_dataset = MyDataset(image_path='../../../datashare/val2014',
-#                           questions_path='../../../datashare/v2_OpenEnded_mscoco_val2014_questions.json',
-#                           answers_path='../../../datashare/v2_mscoco_val2014_annotations.json',
-#                           train=False,
-#                           answerable_only = False
-#                          )
-
-
-# # In[6]:
-
-
-# train_loader = DataLoader(train_dataset, 2, shuffle=True, num_workers=8)
-
-
-# # In[9]:
-
-
-# from models.base_model import MyModel
-# model = MyModel()
-# # model = torch.nn.DataParallel(model)
-# model = model.cuda()
-# for i, img, ans, ques, _, q_len in train_loader:
-#     img = img.cuda()
-#     ans = ans.cuda()
-#     ques = ques.cuda()
-#     q_len = q_len.cuda()
-#     out = model((img, ques, q_len))
-
-
-# # In[ ]:
 
 
 
