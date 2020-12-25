@@ -30,9 +30,7 @@ train:
   num_hid: 20
   batch_size: 64
   save_model: True
-  image_in_size: (3,224,224)
   img_encoder_out_classes: 1024
-  img_encoder_channels: [32, 128, 512, 1024]
   img_encoder_batchnorm: True
   img_encoder_dropout: 0.5
   text_embedding_tokens: 15193

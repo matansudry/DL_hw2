@@ -99,7 +99,6 @@ class ResNetClassifier(nn.Module):
     def __init__(
         self,
         in_size,
-        out_classes,
         channels,
         pool_every,
 #         hidden_dims,
@@ -121,7 +120,6 @@ class ResNetClassifier(nn.Module):
         self.batchnorm = batchnorm
         self.dropout = dropout
         self.conv_params=dict(kernel_size=3, stride=1, padding=1)
-        self.out_classes = out_classes
         self.in_size = in_size
         self.channels = channels
         self.pool_every = pool_every
@@ -179,15 +177,13 @@ class ResNetClassifier(nn.Module):
             layers.append(nn.AvgPool2d(self.pooling_params['kernel_size']))
         # add to go to 1x1
         layers.append(nn.AvgPool2d(3))
-        layers.append(nn.AvgPool2d(10))
+        layers.append(nn.AvgPool2d(4))
         seq = nn.Sequential(*layers)
         return seq
     
     
     def forward(self, x):
         features = self.feature_extractor(x)
-#         features = features.view(features.size(0), -1)
-#         features = self.linear(features)
         return features
 
     
@@ -226,9 +222,7 @@ class Attention(nn.Module):
         super(Attention, self).__init__()
         self.v_conv = nn.Conv2d(v_features, mid_features, 1, bias=False)  # let self.lin take care of bias
         self.q_lin = nn.Linear(q_features, mid_features)
-#         self.v_lin = nn.Linear(v_features, mid_features) # added by us
         self.x_conv = nn.Conv2d(mid_features, glimpses, 1)
-#         self.x_conv_ours = nn.Linear(mid_features, glimpses)# ours
 
         self.drop = nn.Dropout(drop)
         self.relu = nn.ReLU(inplace=True)
@@ -269,44 +263,62 @@ class MyModel(nn.Module, metaclass=ABCMeta):
     """
     Example for a simple model
     """
-    def __init__(self,):# input_dim: int = 50, num_hid: int = 256, output_dim: int = 2, dropout: float = 0.2):
+    #def __init__(self,):# input_dim: int = 50, num_hid: int = 256, output_dim: int = 2, dropout: float = 0.2):
+    def __init__(
+        self, image_in_size=((3,224,224)), img_encoder_out_classes=1024, img_encoder_channels=[32, 128, 512, 1024],
+        img_encoder_batchnorm=True, img_encoder_dropout=0.5, text_embedding_tokens=15193, text_embedding_features=100,
+        text_lstm_features=512, text_dropout=0.5, attention_mid_features=128, attention_glimpses=2, attention_dropout=0.5,
+        classifier_dropout=0.5,  classifier_mid_features=128,classifier_out_classes=2410
+        ):
         super(MyModel, self).__init__()
-#         test_params = [
+        self.image_in_size=image_in_size
+        self.img_encoder_out_classes=img_encoder_out_classes
+        self.img_encoder_channels=img_encoder_channels
+        self.img_encoder_batchnorm=img_encoder_batchnorm
+        self.img_encoder_dropout=img_encoder_dropout
+        self.text_embedding_tokens=text_embedding_tokens
+        self.text_embedding_features=text_embedding_features
+        self.text_lstm_features=text_lstm_features
+        self.text_dropout=text_dropout
+        self.attention_mid_features=attention_mid_features
+        self.attention_glimpses=attention_glimpses
+        self.attention_dropout=attention_dropout
+        self.classifier_dropout=classifier_dropout 
+        self.classifier_mid_features=classifier_mid_features
+        self.classifier_out_classes=classifier_out_classes
+
         self.img_encoder = ResNetClassifier(
-            in_size=(3,224,224),
-            out_classes=2048,
-#             channels=[32, 64, 64, 64, 64, 128, 128, 128, 128, 256, 256, 256, 256, 512, 512, 512, 512, 1024, 1024, 1024, 1024],
-#             channels=[32, 64, 128, 256, 512, 1024],
-            channels=[32, 128, 256, 512, 1024],
-            pool_every=4, #2,
+            in_size=image_in_size,
+            channels=img_encoder_channels,
+            pool_every=1, #2,
             activation_type='relu',
             activation_params=dict(),
             pooling_type='avg',
-            pooling_params=dict(kernel_size=3),
-            batchnorm=True,
-            dropout=0.1,
+            pooling_params=dict(kernel_size=2),
+            batchnorm=img_encoder_batchnorm,
+            dropout=img_encoder_dropout,
         )
         self.text = TextProcessor(
-            embedding_tokens=15193,
-            embedding_features=100, #300,
-            lstm_features=1024,
-            drop=0.5,
+            embedding_tokens=text_embedding_tokens,
+            embedding_features=text_embedding_features, #300,
+            lstm_features=text_lstm_features,
+            drop=text_dropout,
         )
         
         self.attention = Attention(
-            v_features=1024,#2048,
-            q_features=1024,
-            mid_features=128,
-            glimpses=2,
-            drop=0.5,
+            v_features=img_encoder_out_classes,#2048,
+            q_features=text_lstm_features,
+            mid_features=attention_mid_features,
+            glimpses=attention_glimpses,
+            drop=attention_dropout,
         )
         
         self.classifier = nn.Sequential(
-            nn.Dropout(0.5),
-            nn.Linear(2 * 1024 + 1024, 128), #(2*2048+1024,256)
+            nn.Dropout(classifier_dropout),
+            nn.Linear(2 * img_encoder_out_classes + text_lstm_features, classifier_mid_features), #(2*2048+1024,256)
             nn.ReLU(),
-            nn.Dropout(0.5),
-            nn.Linear(128, 2410),
+            nn.Dropout(classifier_dropout),
+            nn.Linear(classifier_mid_features, classifier_out_classes),
         )
 #         self.img_encoder = ConvClassifier(**test_params)
 

@@ -1,0 +1,43 @@
+[2020-12-25 12:44:16,238] [TRAIN] - main:
+  experiment_name_prefix: my_exp
+  seed: 1
+  num_workers: 8
+  parallel: false
+  gpus_to_use: 0,1
+  trains: false
+  paths:
+    train: data/train.pkl
+    validation: data/validation.pkl
+    logs: logs/
+    train_images: ../../../datashare/train2014
+    train_qeustions: ../../../datashare/v2_OpenEnded_mscoco_train2014_questions.json
+    train_answers: ../../../datashare/v2_mscoco_train2014_annotations.json
+    val_images: ../../../datashare/val2014
+    val_qeustions: ../../../datashare/v2_OpenEnded_mscoco_val2014_questions.json
+    val_answers: ../../../datashare/v2_mscoco_val2014_annotations.json
+train:
+  num_epochs: 50
+  grad_clip: 0.25
+  dropout: 0.2
+  num_hid: 20
+  batch_size: 64
+  save_model: true
+  img_encoder_out_classes: 1024
+  img_encoder_batchnorm: true
+  img_encoder_dropout: 0.5
+  text_embedding_tokens: 15193
+  text_embedding_features: 100
+  text_lstm_features: 512
+  text_dropout: 0.5
+  attention_mid_features: 128
+  attention_glimpses: 2
+  attention_dropout: 0.5
+  classifier_dropout: 0.5
+  classifier_mid_features: 128
+  classifier_out_classes: 2410
+  lr:
+    lr_value: 0.001
+    lr_decay: 15
+    lr_gamma: 0.1
+    lr_step_size: 30
+

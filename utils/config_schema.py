@@ -29,21 +29,19 @@ CFG_SCHEMA = {
         'num_hid': int,
         'batch_size': int,
         'save_model': bool,
-        'image_in_size': tuple
-        'img_encoder_out_classes': int
-        'img_encoder_channels': [int,int,int,int]
-        'img_encoder_batchnorm': bool
-        'img_encoder_dropout': float
-        'text_embedding_tokens': int
-        'text_embedding_features': int
-        'text_lstm_features': int
-        'text_dropout': float
-        'attention_mid_features': int
-        'attention_glimpses': int
-        'attention_dropout': float
-        'classifier_dropout': float 
-        'classifier_mid_features': int
-        'classifier_out_classes': int
+        'img_encoder_out_classes': int,
+        'img_encoder_batchnorm': bool,
+        'img_encoder_dropout': float,
+        'text_embedding_tokens': int,
+        'text_embedding_features': int,
+        'text_lstm_features': int,
+        'text_dropout': float,
+        'attention_mid_features': int,
+        'attention_glimpses': int,
+        'attention_dropout': float,
+        'classifier_dropout': float, 
+        'classifier_mid_features': int,
+        'classifier_out_classes': int,
         'lr': {
             'lr_value': float,
             'lr_decay': int,

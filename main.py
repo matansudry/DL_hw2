@@ -55,10 +55,11 @@ def main(cfg: DictConfig) -> None:
                              num_workers=cfg['main']['num_workers'])
 
     # Init model
-    model = (
-        image_in_size=cfg['train']['image_in_size'],
+    image_in_size_input = ((3,224,224))
+    img_encoder_channels_input = [32, 128, 512, 1024]
+    model = MyModel(image_in_size=image_in_size_input,
         img_encoder_out_classes=cfg['train']['img_encoder_out_classes'],
-        img_encoder_channels=cfg['train']['img_encoder_channels'],
+        img_encoder_channels=img_encoder_channels_input,
         img_encoder_batchnorm=cfg['train']['img_encoder_batchnorm'],
         img_encoder_dropout=cfg['train']['img_encoder_dropout'],
         text_embedding_tokens=cfg['train']['text_embedding_tokens'],
@@ -72,6 +73,8 @@ def main(cfg: DictConfig) -> None:
         classifier_mid_features=cfg['train']['classifier_mid_features'],
         classifier_out_classes=cfg['train']['classifier_out_classes']
         )
+
+        
 
     if cfg['main']['parallel']:
         model = torch.nn.DataParallel(model)
