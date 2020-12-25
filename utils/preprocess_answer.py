@@ -1,15 +1,13 @@
 from __future__ import print_function
-
 import argparse
 import os
 import sys
 import json
 import numpy as np
 import re
-import cPickle
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from dataset import Dictionary
+import pickle
+import torch
+import pprint
 import utils
 
 
@@ -92,7 +90,7 @@ def get_score(occurences):
         return 1
 
 
-def process_punctuation(inText):
+def process_punctuation(inText): # removing [';', r"/", '[', ']', '"', '{', '}', '(', ')', '=', '+', '\\', '_', '-', '>', '<', '@', '`', ',', '?', '!'] 
     outText = inText
     for p in punct:
         if (p + ' ' in inText or ' ' + p in inText) \
@@ -104,7 +102,7 @@ def process_punctuation(inText):
     return outText
 
 
-def process_digit_article(inText):
+def process_digit_article(inText): #removing ['a', 'an', 'the'] and "aint": "ain't"
     outText = []
     tempText = inText.lower().split()
     for word in tempText:
@@ -132,17 +130,18 @@ def preprocess_answer(answer):
     return answer
 
 
-def filter_answers(answers_dset, min_occurence):
+def filter_answers(answers_dset, min_occurence): # removing redudnt laters and minimum occerence according min_occurence to occurence dict
     """This will change the answer to preprocessed version
     """
     occurence = {}
     for ans_entry in answers_dset:
-        gtruth = ans_entry['multiple_choice_answer']
+        gtruth = ans_entry['multiple_choice_answer']# taking "multiple_choice_answer": "brushing teeth",
         gtruth = preprocess_answer(gtruth)
         if gtruth not in occurence:
             occurence[gtruth] = set()
         occurence[gtruth].add(ans_entry['question_id'])
-    for answer in occurence.keys():
+#     for answer in occurence.keys():
+    for answer in list(occurence):
         if len(occurence[answer]) < min_occurence:
             occurence.pop(answer)
 
@@ -166,12 +165,12 @@ def create_ans2label(occurence, name, cache_root):
         ans2label[answer] = label
         label += 1
 
-    utils.create_dir(cache_root)
+#     utils.create_dir(cache_root)
 
     cache_file = os.path.join(cache_root, name+'_ans2label.pkl')
-    cPickle.dump(ans2label, open(cache_file, 'wb'))
+    pickle.dump(ans2label, open(cache_file, 'wb'))
     cache_file = os.path.join(cache_root, name+'_label2ans.pkl')
-    cPickle.dump(label2ans, open(cache_file, 'wb'))
+    pickle.dump(label2ans, open(cache_file, 'wb'))
     return ans2label
 
 
@@ -214,11 +213,12 @@ def compute_target(answers_dset, ans2label, name, cache_root):
         })
 
     print(cache_root)
-    utils.create_dir(cache_root)
+#     utils.create_dir(cache_root)
     cache_file = os.path.join(cache_root, name+'_target.pkl')
     print(cache_file)
     with open(cache_file, 'wb') as f:
-      cPickle.dump(target, f)
+#       cPickle.dump(target, f)
+       pickle.dump(target, f)
     return target
 
 
@@ -235,15 +235,15 @@ def get_question(qid, questions):
 
 
 def load_v2():
-    train_answer_file = 'data/v2_mscoco_train2014_annotations.json'
+    train_answer_file = '../../../datashare/v2_mscoco_train2014_annotations.json'
     with open(train_answer_file) as f:
         train_answers = json.load(f)['annotations']
 
-    val_answer_file = 'data/v2_mscoco_val2014_annotations.json'
+    val_answer_file = '../../../datashare/v2_mscoco_val2014_annotations.json'
     with open(val_answer_file) as f:
         val_answers = json.load(f)['annotations']
 
     occurence = filter_answers(train_answers, 9)
-    ans2label = create_ans2label(occurence, 'trainval', "data/cache")
-    compute_target(train_answers, ans2label, 'train', "data/cache")
-    compute_target(val_answers, ans2label, 'val', "data/cache")
+    ans2label = create_ans2label(occurence, 'trainval', "../data/cache")
+    compute_target(train_answers, ans2label, 'train', "../data/cache")
+    compute_target(val_answers, ans2label, 'val', "../data/cache")

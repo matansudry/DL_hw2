@@ -81,7 +81,7 @@ class MyDataset(data.Dataset):
             
         #preparing train and val quastion vocab
         if os.path.isfile("../data/cache/question_vocab_train") and os.path.isfile("../data/cache/question_vocab_val"):
-            continue
+            pass
         else:
             preprocess_vocab_func()
             
@@ -98,7 +98,7 @@ class MyDataset(data.Dataset):
         #preparing
         #preparing train and val quastion vocab
         if os.path.isfile("../data/cache/trainval_ans2label.pkl"):
-            continue
+            pass
         else:
             load_v2()
         
