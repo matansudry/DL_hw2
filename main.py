@@ -33,7 +33,7 @@ def main(cfg: DictConfig) -> None:
 
     # Set seed for results reproduction
     main_utils.set_seed(cfg['main']['seed'])
-
+    
     # Load dataset
     train_dataset = MyDataset(image_path=cfg['main']['paths']['train_images'],
                               questions_path=cfg['main']['paths']['train_qeustions'],
@@ -73,8 +73,6 @@ def main(cfg: DictConfig) -> None:
         classifier_mid_features=cfg['train']['classifier_mid_features'],
         classifier_out_classes=cfg['train']['classifier_out_classes']
         )
-
-        
 
     if cfg['main']['parallel']:
         model = torch.nn.DataParallel(model)

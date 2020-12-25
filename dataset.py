@@ -21,6 +21,8 @@ import torchvision.transforms as transforms
 from PIL import Image
 from models.base_model import MyModel
 from torch.nn.utils.rnn import pack_padded_sequence
+from utils.preprocess_vocab import preprocess_vocab_func
+from utils.preprocess_answer import load_v2
 
 class CocoImages(data.Dataset):
     """ Dataset for MSCOCO images located in a folder on the filesystem """
@@ -77,6 +79,12 @@ class MyDataset(data.Dataset):
         else:
             dataset_type = "val"
             
+        #preparing train and val quastion vocab
+        if os.path.isfile("../data/cache/question_vocab_train") and os.path.isfile("../data/cache/question_vocab_val"):
+            continue
+        else:
+            preprocess_vocab_func()
+            
         #load question vocab
         with open("../data/cache/question_vocab_"+dataset_type, 'r') as fd:
             vocab_json = json.load(fd)
@@ -86,6 +94,14 @@ class MyDataset(data.Dataset):
         #Vocab
         self.vocab = vocab_json
         self.token_to_index = self.vocab#['question']
+        
+        #preparing
+        #preparing train and val quastion vocab
+        if os.path.isfile("../data/cache/trainval_ans2label.pkl"):
+            continue
+        else:
+            load_v2()
+        
         
         with open("../data/cache/trainval_ans2label.pkl", "rb") as f:
             unpickler = pickle.Unpickler(f)
