@@ -1,24 +1,28 @@
+
 """
 Here, we create a custom dataset
 """
 import torch
 import pickle
-import argparse
+#import argparse
 import os
-import sys
+#import sys
 import json
-import numpy as np
-import re
+#import numpy as np
+#import re
 import pickle
-import utils
+#import utils
 import tqdm
 from utils.types import PathT
 import torch.utils.data as data
-from torch.utils.data import DataLoader
+#from torch.utils.data import DataLoader
 from typing import Any, Tuple, Dict, List
 import torchvision.transforms as transforms
 from PIL import Image
-# from __future__ import print_function
+#from models.base_model import MyModel
+#from torch.nn.utils.rnn import pack_padded_sequence
+from utils.preprocess_vocab import preprocess_vocab_func
+from utils.preprocess_answer import load_v2
 
 class CocoImages(data.Dataset):
     """ Dataset for MSCOCO images located in a folder on the filesystem """
@@ -51,7 +55,11 @@ class CocoImages(data.Dataset):
 
     def __len__(self):
         return len(self.sorted_ids)
-    
+
+
+# In[3]:
+
+
 class MyDataset(data.Dataset):
     """
     Custom dataset template. Implement the empty functions.
@@ -71,8 +79,14 @@ class MyDataset(data.Dataset):
         else:
             dataset_type = "val"
             
+        #preparing train and val quastion vocab
+        if os.path.isfile("../data/cache/question_vocab_train") and os.path.isfile("../data/cache/question_vocab_val"):
+            pass
+        else:
+            preprocess_vocab_func()
+            
         #load question vocab
-        with open("data/cache/question_vocab_"+dataset_type, 'r') as fd:
+        with open("../data/cache/question_vocab_"+dataset_type, 'r') as fd:
             vocab_json = json.load(fd)
         
 
@@ -81,7 +95,15 @@ class MyDataset(data.Dataset):
         self.vocab = vocab_json
         self.token_to_index = self.vocab#['question']
         
-        with open("data/cache/trainval_ans2label.pkl", "rb") as f:
+        #preparing
+        #preparing train and val quastion vocab
+        if os.path.isfile("../data/cache/trainval_ans2label.pkl"):
+            pass
+        else:
+            load_v2()
+        
+        
+        with open("../data/cache/trainval_ans2label.pkl", "rb") as f:
             unpickler = pickle.Unpickler(f)
             # if file is not empty scores will be equal
             # to the value unpickled
@@ -92,33 +114,33 @@ class MyDataset(data.Dataset):
         print("files upload was done")
         
         #load Q
-        if os.path.isfile("data/questions_"+dataset_type):
-            self.questions = torch.load("data/questions_"+dataset_type)
+        if os.path.isfile("../data/questions_"+dataset_type):
+            self.questions = torch.load("../data/questions_"+dataset_type)
         else:
             self.questions = list(self.prepare_questions())
             self.questions = [self._encode_question(q, self.token_to_index) for q in self.questions] 
-            torch.save(self.questions, "data/questions_"+dataset_type)
+            torch.save(self.questions, "../data/questions_"+dataset_type)
         
         print("questions done")
         
         #change Q to Q dict    
-        if os.path.isfile("data/questions_dict_"+dataset_type):
-            with open("data/questions_dict_"+dataset_type, 'rb') as handle:
+        if os.path.isfile("../data/questions_dict_"+dataset_type):
+            with open("../data/questions_dict_"+dataset_type, 'rb') as handle:
                 self.questions_dict = pickle.load(handle)
         else:
             self.questions_dict = self.questions_to_dict()
-            with open("data/questions_dict_"+dataset_type, 'wb') as handle:
+            with open("../data/questions_dict_"+dataset_type, 'wb') as handle:
                 pickle.dump(self.questions_dict, handle)
                 
         print("questions dict done")
                 
         #Load question_id_to_image_id
-        if os.path.isfile("data/question_id_to_image_id_"+dataset_type):
-            with open("data/question_id_to_image_id_"+dataset_type, 'r') as fd:
+        if os.path.isfile("../data/question_id_to_image_id_"+dataset_type):
+            with open("../data/question_id_to_image_id_"+dataset_type, 'r') as fd:
                 self.question_id_to_image_id = json.load(fd)
         else:
             self.question_id_to_image_id = self.question_id_to_image_id()
-            with open("data/question_id_to_image_id_"+dataset_type, 'w') as fd:
+            with open("../data/question_id_to_image_id_"+dataset_type, 'w') as fd:
                 json.dump(self.question_id_to_image_id, fd)
 
         print("question_id_to_image_id done")
@@ -126,58 +148,72 @@ class MyDataset(data.Dataset):
         
         #load A
         self.answerable_only = answerable_only
-        if os.path.isfile("data/answerable_with_labels_only_"+dataset_type+"_"+str(answerable_only)):
-            with open("data/answerable_with_labels_only_"+dataset_type+"_"+str(answerable_only), 'rb') as handle:
+        if os.path.isfile("../data/answerable_with_labels_only_"+dataset_type+"_"+str(answerable_only)):
+            with open("../data/answerable_with_labels_only_"+dataset_type+"_"+str(answerable_only), 'rb') as handle:
                 self.answerable = pickle.load(handle)
         else:
             #preprocess A
             self.answerable = self.preprocess_answers(train)
             if self.answerable_only:
                 self.answerable = self._find_answerable()
-            with open("data/answerable_with_labels_only_"+dataset_type+"_"+str(answerable_only), 'wb') as handle:
+            with open("../data/answerable_with_labels_only_"+dataset_type+"_"+str(answerable_only), 'wb') as handle:
                 pickle.dump(self.answerable, handle)
         
         print("answers done")
         
         #load I
-        if os.path.isfile("data/images_"+dataset_type):
-            with open("data/images_"+dataset_type, 'rb') as handle:
+        if os.path.isfile("../data/images_"+dataset_type):
+            with open("../data/images_"+dataset_type, 'rb') as handle:
                 self.images = pickle.load(handle)
 
         else:
             #preprocess A
             self.images = self.load_images()
-            with open("data/images_"+dataset_type, 'wb') as handle:
+            with open("../data/images_"+dataset_type, 'wb') as handle:
                 pickle.dump(self.images, handle)
-        
+                
+        self.images=self.images[0]
         print("images done")
         
         #load coco_images_to_dict
-        if os.path.isfile("data/coco_images_to_dict"+dataset_type):
-            with open("data/coco_images_to_dict"+dataset_type, 'rb') as handle:
+        if os.path.isfile("../data/coco_images_to_dict"+dataset_type):
+            with open("../data/coco_images_to_dict"+dataset_type, 'rb') as handle:
                 self.images_dict = pickle.load(handle)
 
         else:
             self.coco_images_to_dict()
-            with open("data/coco_images_to_dict"+dataset_type, 'wb') as handle:
+            with open("../data/coco_images_to_dict"+dataset_type, 'wb') as handle:
                 pickle.dump(self.images_dict, handle)
                 
         print("coco_images_to_dict done")
+        
                 
         self.index_to_question_number_dict = self.index_to_question_number_func()
-    
+        
+        if os.path.isfile("../data/combine_dict"+dataset_type):
+            with open("../data/combine_dict"+dataset_type, 'rb') as handle:
+                self.combine_dict = pickle.load(handle)
+
+        else:
+            self.dataset_combine()
+            with open("../data/combine_dict"+dataset_type, 'wb') as handle:
+                pickle.dump(self.combine_dict, handle)
+        
     def __getitem__(self, item):
         item = self.index_to_question_number_dict[item]
-        q, q_length = self.questions_dict[item]
+        """q, q_length = self.questions_dict[item]
         a = self.answerable[item]
-        temp = torch.zeros(self.number_of_answers_per_question)
+        ans = torch.zeros(self.number_of_answers_per_question)
         for answer_index in range(len(a[0])):
-            temp[a[0][answer_index]] = a[1][answer_index]
+            ans[a[0][answer_index]] = a[1][answer_index]
         image_id = self.question_id_to_image_id[str(item)]
         image_id = self.images_dict[image_id]
-        v = self.images[0][image_id][1]
+        #v = self.images[image_id][1]
+        #v = 1
         
-        return v, temp, q, item, q_length
+        return self.images[image_id][1], ans, q, item, q_length"""
+        temp = self.combine_dict[item]
+        return temp[0], temp[1], temp[2], temp[3], temp[4]
 
     def __len__(self) -> int:
         """
@@ -197,7 +233,6 @@ class MyDataset(data.Dataset):
     def load_images(self):
         transform = self.get_transform(target_size=224, central_fraction=0.875)
         dataset = [CocoImages(self.image_features_path, transform=transform)]
-    #     dataset = Composite(dataset)
         return dataset
     
     @property
@@ -208,18 +243,16 @@ class MyDataset(data.Dataset):
                     
     def preprocess_answers(self, train=True):
         if train:
-            with open("data/cache/train_target.pkl", "rb") as f:
+            with open("../data/cache/train_target.pkl", "rb") as f:
                 unpickler = pickle.Unpickler(f)
                 scores = unpickler.load()
         else:
-            with open("data/cache/val_target.pkl", "rb") as f:
+            with open("../data/cache/val_target.pkl", "rb") as f:
                 unpickler = pickle.Unpickler(f)
                 scores = unpickler.load()  
 
-        with open("data/cache/trainval_ans2label.pkl", "rb") as f:
+        with open("../data/cache/trainval_ans2label.pkl", "rb") as f:
             unpickler = pickle.Unpickler(f)
-            # if file is not empty scores will be equal
-            # to the value unpickled
             dict_answers = unpickler.load()
             self.number_of_answers_per_question = len(dict_answers)
 
@@ -279,3 +312,26 @@ class MyDataset(data.Dataset):
             images_dict[image[0]] = cnt
             cnt +=1
         self.images_dict = images_dict
+    def num_tokens(self):
+        return len(self.vocab) + 1
+    
+    def dataset_combine(self):
+        self.combine_dict ={}
+        for i in tqdm.tqdm(range(len(self.index_to_question_number_dict))):
+            item = self.index_to_question_number_dict[i]
+            q, q_length = self.questions_dict[item]
+            a = self.answerable[item]
+            ans = torch.zeros(self.number_of_answers_per_question)
+            for answer_index in range(len(a[0])):
+                ans[a[0][answer_index]] = a[1][answer_index]
+            image_id = self.question_id_to_image_id[str(item)]
+            image_id = self.images_dict[image_id]
+            v = self.images[image_id][1]
+            self.combine_dict[item] = (self.images[image_id][1], ans, q, item, q_length)
+
+        
+
+
+
+
+
