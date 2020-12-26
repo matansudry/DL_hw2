@@ -1,0 +1,55 @@
+[2020-12-14 20:37:20,192] [TRAIN] - main:
+  experiment_name_prefix: my_exp
+  seed: 1
+  num_workers: 6
+  parallel: false
+  gpus_to_use: 1,2
+  trains: false
+  paths:
+    train: data/train.pkl
+    validation: data/validation.pkl
+    logs: logs/
+train:
+  num_epochs: 15
+  grad_clip: 0.25
+  dropout: 0.2
+  num_hid: 20
+  batch_size: 16
+  save_model: false
+  lr:
+    lr_value: 0.001
+    lr_decay: 15
+    lr_gamma: 0.1
+    lr_step_size: 30
+
+[2020-12-14 20:37:20,605] [TRAIN] - MyModel(
+  (classifier): FCNet(
+    (seq): Sequential(
+      (0): Dropout(p=0.2, inplace=False)
+      (1): Linear(in_features=50, out_features=20, bias=True)
+      (2): ReLU()
+      (3): Dropout(p=0.2, inplace=False)
+      (4): Linear(in_features=20, out_features=20, bias=True)
+      (5): ReLU()
+      (6): Dropout(p=0.2, inplace=False)
+      (7): Linear(in_features=20, out_features=2, bias=True)
+      (8): ReLU()
+    )
+  )
+)
+Params: 1485
+[2020-12-14 20:37:23,446] [TRAIN] - (EPOCH 0) Time: 2.78, Gradient norm: 0.6886, Train loss: 0.10, Train Score: 51.05, Val score: 52.25
+[2020-12-14 20:37:25,876] [TRAIN] - (EPOCH 1) Time: 2.43, Gradient norm: 0.6515, Train loss: 0.19, Train Score: 63.75, Val score: 73.05
+[2020-12-14 20:37:28,426] [TRAIN] - (EPOCH 2) Time: 2.55, Gradient norm: 0.6158, Train loss: 0.27, Train Score: 73.50, Val score: 85.55
+[2020-12-14 20:37:31,027] [TRAIN] - (EPOCH 3) Time: 2.60, Gradient norm: 0.5988, Train loss: 0.30, Train Score: 78.85, Val score: 86.15
+[2020-12-14 20:37:33,583] [TRAIN] - (EPOCH 4) Time: 2.55, Gradient norm: 0.5859, Train loss: 0.32, Train Score: 82.90, Val score: 91.40
+[2020-12-14 20:37:35,952] [TRAIN] - (EPOCH 5) Time: 2.37, Gradient norm: 0.5765, Train loss: 0.32, Train Score: 85.00, Val score: 94.70
+[2020-12-14 20:37:38,405] [TRAIN] - (EPOCH 6) Time: 2.45, Gradient norm: 0.5689, Train loss: 0.31, Train Score: 87.05, Val score: 95.45
+[2020-12-14 20:37:40,878] [TRAIN] - (EPOCH 7) Time: 2.47, Gradient norm: 0.5650, Train loss: 0.33, Train Score: 88.60, Val score: 93.90
+[2020-12-14 20:37:43,282] [TRAIN] - (EPOCH 8) Time: 2.40, Gradient norm: 0.5607, Train loss: 0.32, Train Score: 89.40, Val score: 95.70
+[2020-12-14 20:37:45,774] [TRAIN] - (EPOCH 9) Time: 2.49, Gradient norm: 0.5573, Train loss: 0.32, Train Score: 90.50, Val score: 96.55
+[2020-12-14 20:37:48,308] [TRAIN] - (EPOCH 10) Time: 2.53, Gradient norm: 0.5549, Train loss: 0.32, Train Score: 91.45, Val score: 97.00
+[2020-12-14 20:37:50,696] [TRAIN] - (EPOCH 11) Time: 2.39, Gradient norm: 0.5527, Train loss: 0.34, Train Score: 92.50, Val score: 97.55
+[2020-12-14 20:37:53,186] [TRAIN] - (EPOCH 12) Time: 2.49, Gradient norm: 0.5496, Train loss: 0.32, Train Score: 93.00, Val score: 98.20
+[2020-12-14 20:37:55,668] [TRAIN] - (EPOCH 13) Time: 2.48, Gradient norm: 0.5470, Train loss: 0.33, Train Score: 93.30, Val score: 97.40
+[2020-12-14 20:37:58,063] [TRAIN] - (EPOCH 14) Time: 2.39, Gradient norm: 0.5466, Train loss: 0.32, Train Score: 93.20, Val score: 98.10
