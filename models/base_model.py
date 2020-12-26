@@ -81,15 +81,15 @@ class ResidualBlock(nn.Module):
                     kernel_size= kernel_sizes[N-1],
                     padding=(int((kernel_sizes[N-1]-1)/2),
                     int((kernel_sizes[N-1]-1)/2)), bias=True))
-        if (in_channels != channels[N-1]):
-            shortcut_layers.append(nn.Conv2d (in_channels, channels[N-1], kernel_size= 1, bias=False))
+        #if (in_channels != channels[N-1]):
+            #shortcut_layers.append(nn.Conv2d (in_channels, channels[N-1], kernel_size= 1, bias=False))
 
         self.main_path = nn.Sequential(*main_layers)
-        self.shortcut_path = nn.Sequential(*shortcut_layers)
+        #self.shortcut_path = nn.Sequential(*shortcut_layers)
 
     def forward(self, x):
         out = self.main_path(x)
-        out = out + self.shortcut_path(x)
+        #out = out + self.shortcut_path(x)
         relu = torch.nn.ReLU()
         out = relu(out)
         return out
