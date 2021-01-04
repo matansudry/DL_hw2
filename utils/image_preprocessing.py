@@ -5,11 +5,7 @@ from torchvision import transforms
 import config
 import numpy
 from tqdm import tqdm
-
-try:
-    import cPickle as pickle
-except:
-    import pickle
+import pickle
 
 transform = transforms.Compose([
     transforms.Scale(256),
@@ -20,10 +16,9 @@ transform = transforms.Compose([
 
 
 def image_preprocessing(images_path, target_path, image_size, processed_image_path, img2idx_path):
-    with open(target_path, "rb") as f:
-        target = pickle.load(f)
+    num_of_pics = len(os.listdir(images_path))
 
-    features_shape = (len(target), 3, image_size, image_size)
+    features_shape = (num_of_pics, 3, image_size, image_size)
     img2idx = {}
     with h5py.File(processed_image_path, 'w', libver='latest') as f:
         images = f.create_dataset('images', shape=features_shape, dtype='float16')
@@ -43,5 +38,6 @@ def image_preprocessing(images_path, target_path, image_size, processed_image_pa
         pickle.dump(img2idx, f)
 
 
-if __name__ == '__main__':
+def image_preprocessing_master():
     image_preprocessing('../../../datashare/train2014', '../data/cache/train_target.pkl', 224, '../data/cache/train.h5', '../data/cache/img2idx_train.pkl')
+    image_preprocessing('../../../datashare/val2014', '../data/cache/val_target.pkl', 224, '../data/cache/val.h5', '../data/cache/img2idx_val.pkl')

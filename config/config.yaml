@@ -30,16 +30,13 @@ train:
   num_hid: 20
   batch_size: 128
   save_model: True
-  img_encoder_out_classes: 2048
+  img_encoder_out_classes: 4096
   img_encoder_batchnorm: True
   img_encoder_dropout: 0.0
-  text_embedding_tokens: 13658
+  text_embedding_tokens: 13659
   text_embedding_features: 300
-  text_lstm_features: 2048
+  text_lstm_features: 4096
   text_dropout: 0.4
-  attention_mid_features: 512
-  attention_glimpses: 2
-  attention_dropout: 0.5
   classifier_dropout: 0.5 
   classifier_mid_features: 512
   classifier_out_classes: 2410

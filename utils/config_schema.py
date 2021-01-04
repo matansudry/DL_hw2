@@ -36,17 +36,11 @@ CFG_SCHEMA = {
         'text_embedding_features': int,
         'text_lstm_features': int,
         'text_dropout': float,
-        'attention_mid_features': int,
-        'attention_glimpses': int,
-        'attention_dropout': float,
         'classifier_dropout': float, 
         'classifier_mid_features': int,
         'classifier_out_classes': int,
         'lr': {
             'lr_value': float,
-            #'lr_decay': int,
-            #'lr_gamma': float,
-            #'lr_step_size': int,
         },
     },
 }

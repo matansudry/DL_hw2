@@ -69,35 +69,17 @@ def train(model: nn.Module, train_loader: DataLoader, eval_loader: DataLoader, t
                 img = img.cuda()
                 ans = ans.cuda()
                 ques = ques.cuda()
-                #q_len = q_len.cuda()
                 
             optimizer.zero_grad()
-            y_hat = model((img, ques))#, q_len))
+            y_hat = model((img, ques))
             img_size = img.size(0)
-            img = None
-            ques = None
-            #q_len = None
             nll = -F.log_softmax(y_hat)
             batch_score = train_utils.batch_accuracy(y_hat, ans.data).sum()
-            #print("batch_score = ", batch_score)
-            #new_ans = ans.detach().clone()
-            #ans_sum = ans.sum(dim=1)
-            #print("ans_sum = ", ans_sum)
-            #print("ans_sum.shape = ", ans_sum.shape)
-            #for i in range(len(ans_sum)):
-                #if ans_sum[i] == 0:
-                    #ans_sum[i]=1
-                #ans[i] = ans[i]/ans_sum[i]
-            #new_ans = update_ans(ans)
-            #print("ans = ", ans)
-            #print("ans.shape = ", ans.shape)
             ans = answer_norm(ans)
             loss = (nll * ans).sum(dim=1).mean()
-            #print("loss = ",loss)
 
 
             # Optimization step
-            
             loss.backward()
             optimizer.step()
             ExponentialLR_decay(steps)
@@ -106,10 +88,7 @@ def train(model: nn.Module, train_loader: DataLoader, eval_loader: DataLoader, t
             metrics['total_norm'] += nn.utils.clip_grad_norm_(model.parameters(), train_params.grad_clip)
             metrics['count_norm'] += 1
 
-            # NOTE! This function compute scores correctly only for one hot encoding representation of the logits
-            #batch_score = train_utils.batch_accuracy(y_hat, ans.data).sum()
             metrics['train_score'] += batch_score.item()
-
             metrics['train_loss'] += loss.item() * img_size
 
 #             # Report model to tensorboard
@@ -117,8 +96,6 @@ def train(model: nn.Module, train_loader: DataLoader, eval_loader: DataLoader, t
 # #                 list_input = [img, ques, q_len]
 #                 logger.report_graph(model, (img, ques, q_len))
             i += 1
-        # Learning rate scheduler step
-        #scheduler.step()
 
         # Calculate metrics
         metrics['train_loss'] /= len(train_loader.dataset)
@@ -174,19 +151,11 @@ def evaluate(model: nn.Module, dataloader: DataLoader) -> Scores:
             img = img.cuda()
             ans = ans.cuda()
             ques = ques.cuda()
-            #q_len = q_len.cuda()
 
-        y_hat = model((img, ques))#, q_len))
+        y_hat = model((img, ques))
         img = None
         ques = None
-        #q_len = None
         nll = -loss_func(y_hat)
-        #new_ans= update_ans(ans)
-        #loss2 = nn.NLLLoss().to("cuda")
-        #loss += (nll * new_ans).sum(dim=1).mean()
-        #_, predicted_index = ans.max(dim=1, keepdim=True)
-        #predicted_index= torch.squeeze(predicted_index)
-        #loss += loss2(nll, predicted_index) 
         score += train_utils.batch_accuracy(y_hat, ans.data).sum()
         ans = answer_norm(ans)
         loss += (nll * ans).sum(dim=1).mean()

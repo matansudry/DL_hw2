@@ -1,13 +1,8 @@
 import os
-#from helpers import datapoint
 import numpy as np
 import json
 import re
-
-try:
-    import cPickle as pickle
-except:
-    import pickle
+import pickle
 
 data_path = '../../../../datashare/'
 image_train_path = os.path.join(data_path, 'train2014')
@@ -283,10 +278,10 @@ def create_q2label(train_questions, name, cache_root):
     pickle.dump(label2q, open(cache_file, 'wb'))
     return q2label
 
-
-occurence = filter_answers(train_annot, 9)
-ans2label = create_ans2label(occurence, 'trainval', "../../data/cache")
-q2label = create_q2label(train_questions, 'trainval', "../../data/cache")
-compute_target(train_annot, train_questions, ans2label, q2label, 'train', "../../data/cache")
-compute_target(val_annot, val_questions, ans2label, q2label, 'val', "../../data/cache")
+def preprocessing_vocab():
+    occurence = filter_answers(train_annot, 9)
+    ans2label = create_ans2label(occurence, 'trainval', "../../data/cache")
+    q2label = create_q2label(train_questions, 'trainval', "../../data/cache")
+    compute_target(train_annot, train_questions, ans2label, q2label, 'train', "../../data/cache")
+    compute_target(val_annot, val_questions, ans2label, q2label, 'val', "../../data/cache")
 

@@ -35,6 +35,9 @@ class ResidualBlock(nn.Module):
         assert len(channels) == len(kernel_sizes)
         assert all(map(lambda x: x % 2 == 1, kernel_sizes))
 
+        """if activation_type not in ACTIVATIONS:
+            raise ValueError("Unsupported activation type")"""
+
         self.main_path, self.shortcut_path = None, None
         main_layers = []
         shortcut_layers = []
@@ -124,9 +127,7 @@ class ResNetClassifier(nn.Module):
         self.pooling_type = pooling_type
         self.pooling_params = pooling_params
         self.feature_extractor = self._make_feature_extractor()
-        self.fc1 = nn.Linear(512, 1000, bias=True)
-        self.fc2 = nn.Linear(1000, self.output_dim, bias=True)
-        self.relu = nn.ReLU(inplace=True)
+        self.fc = nn.Linear(512, self.output_dim, bias=True)
 
 
     def _make_feature_extractor(self):
@@ -162,6 +163,7 @@ class ResNetClassifier(nn.Module):
                 temp_in_channels = self.channels[i-1]
                 temp_channels = []
                 temp_kernel_sizes = []
+                #layers.append(nn.AvgPool2d(self.pooling_params['kernel_size']))
         temp_channels.append(self.channels[N-1])
         temp_kernel_sizes.append(3)
         layers.append(ResidualBlock(
@@ -172,7 +174,12 @@ class ResNetClassifier(nn.Module):
                 dropout= self.dropout,
                 activation_type= self.activation_type))
         if ((N % self.pool_every)==0):
-                layers.append(torch.nn.AdaptiveAvgPool2d(output_size=(1, 1)))
+#             layers.append(nn.AvgPool2d(self.pooling_params['kernel_size']))
+                layers.append(torch.nn.AdaptiveAvgPool2d(output_size=(1, 1))) ########################################################
+        #layers.append(nn.Linear(1000, self.output_dim, bias=True))
+        # add to go to 1x1
+        #layers.append(nn.AvgPool2d(2))
+        #layers.append(nn.AvgPool2d(15))
         seq = nn.Sequential(*layers)
         return seq
     	
@@ -181,11 +188,19 @@ class ResNetClassifier(nn.Module):
         out = self.feature_extractor(x)
         batch_size = out.shape[0]
         out = out.view(batch_size, -1)
-        out = self.fc1(out)
-        out = self.relu(out)
-        out = self.fc2(out)
+        #print("out.shape = ", out.shape)
+        out = self.fc(out)
+        out = out.view(batch_size,-1,1,1)
+        #shortcut = self.shortcut_path(x)
+        #print("shortcut.shape = ", shortcut.shape)
+        #print("out.shape = ", out.shape)
+        #out = out + shortcut
+        #out = out.view(batch_size,-1,1,1)
+        #relu = torch.nn.ReLU()
+        #out = relu(out)
         return out 
-    
+
+     
 class TextProcessor(nn.Module):
     def __init__(self, embedding_tokens, embedding_features, lstm_features, drop=0.0):
         super(TextProcessor, self).__init__()
@@ -214,10 +229,51 @@ class TextProcessor(nn.Module):
         packed = pack_padded_sequence(tanhed, q_len, batch_first=True, enforce_sorted=False)
         _, (_, c) = self.lstm(packed)
         return c.squeeze(0)
+    
+    
+class Attention(nn.Module):
+    def __init__(self, v_features, q_features, mid_features, glimpses, drop=0.0):
+        super(Attention, self).__init__()
+        self.v_conv = nn.Conv2d(v_features, mid_features, 1, bias=False)  # let self.lin take care of bias
+        self.q_lin = nn.Linear(q_features, mid_features)
+        self.x_conv = nn.Conv2d(mid_features, glimpses, 1)
+
+        self.drop = nn.Dropout(drop)
+        self.relu = nn.ReLU(inplace=True)
+
+    def forward(self, img, ques):
+        ques = self.q_lin(self.drop(ques))
+        img = self.v_conv(self.drop(img))
+        ques = tile_2d_over_nd(ques, img)
+        x = self.relu(img + ques)
+        x = self.x_conv(self.drop(x))
+        return x
 
 
-#need to remove it
-"""class ImageNet(nn.Module):
+def apply_attention(input, attention):
+    """ Apply any number of attention maps over the input. """
+    n, c = input.size()[:2]
+    glimpses = attention.size(1)
+
+    # flatten the spatial dims into the third dim, since we don't need to care about how they are arranged
+    input = input.view(n, 1, c, -1) # [n, 1, c, s]
+    attention = attention.view(n, glimpses, -1)
+    attention = F.softmax(attention, dim=-1).unsqueeze(2) # [n, g, 1, s]
+    weighted = attention * input # [n, g, v, s]
+    weighted_mean = weighted.sum(dim=-1) # [n, g, v]
+    return weighted_mean.view(n, -1)
+
+
+def tile_2d_over_nd(feature_vector, feature_map):
+    """ Repeat the same feature vector over all spatial positions of a given feature map.
+        The feature vector should have the same batch size and number of features as the feature map.
+    """
+    n, c = feature_vector.size()
+    spatial_size = feature_map.dim() - 2
+    tiled = feature_vector.view(n, c, *([1] * spatial_size)).expand_as(feature_map)
+    return tiled    
+
+class ImageNet(nn.Module):
     def __init__(self, output_dim):
         super(ImageNet, self).__init__()
         from torchvision import models
@@ -228,35 +284,7 @@ class TextProcessor(nn.Module):
     def forward(self, image_tensor):
         x = self.model(image_tensor)
         x = self.fc(x)
-        return F.normalize(x, dim=1, p=2)"""
-
-#need to remove it
-"""class QuestionNet(nn.Module):
-    def __init__(self, word_embedding_dim, lstm_hidden_dim, word_vocab_size, output_dim, lstm_drop=0.0):
-        super(QuestionNet, self).__init__()
-
-        # LSTM unit
-        self.word_embedding = nn.Embedding(word_vocab_size, word_embedding_dim, padding_idx=0)
-        self.dropout = nn.Dropout(p=lstm_drop)
-        self.lstm_input_dim = self.word_embedding.embedding_dim
-        self.lstm_hidden_dim = lstm_hidden_dim
-        self.lstm = nn.LSTM(input_size=self.lstm_input_dim, hidden_size=self.lstm_hidden_dim, num_layers=2)
-        self.fc = nn.Linear(output_dim, output_dim, bias=True)
-        # self.fc2 = nn.Linear(21 * self.lstm_hidden_dim, q_output_dim, bias=True)
-        # self.output = q_output_dim
-
-
-    def forward(self, questions_tensor):
-        t = self.word_embedding(questions_tensor)
-        t = self.dropout(t)
-        t = F.tanh(t)
-        t = t.transpose(0, 1)
-        _, (h, c) = self.lstm(t)
-        t = torch.cat((h, c), 2)
-        t = t.transpose(0, 1)
-        t = t.reshape(t.size()[0], -1)
-        t = F.tanh(t)
-        return self.fc(t)"""
+        return F.normalize(x, dim=1, p=2)
 
 class MyModel(nn.Module, metaclass=ABCMeta):
     """
@@ -266,7 +294,8 @@ class MyModel(nn.Module, metaclass=ABCMeta):
     def __init__(
         self, image_in_size=((3,224,224)), img_encoder_out_classes=1024, img_encoder_channels=[32, 128, 512, 1024],
         img_encoder_batchnorm=True, img_encoder_dropout=0.5, text_embedding_tokens=15193, text_embedding_features=100,
-        text_lstm_features=512, text_dropout=0.5, classifier_dropout=0.5,  classifier_mid_features=128,classifier_out_classes=2410
+        text_lstm_features=512, text_dropout=0.5, attention_mid_features=128, attention_glimpses=2, attention_dropout=0.5,
+        classifier_dropout=0.5,  classifier_mid_features=128,classifier_out_classes=2410
         ):
         super(MyModel, self).__init__()
         self.image_in_size=image_in_size
@@ -278,19 +307,17 @@ class MyModel(nn.Module, metaclass=ABCMeta):
         self.text_embedding_features=text_embedding_features
         self.text_lstm_features=text_lstm_features
         self.text_dropout=text_dropout
+        self.attention_mid_features=attention_mid_features
+        self.attention_glimpses=attention_glimpses
+        self.attention_dropout=attention_dropout
         self.classifier_dropout=classifier_dropout 
         self.classifier_mid_features=classifier_mid_features
         self.classifier_out_classes=classifier_out_classes
-        self.dropout = nn.Dropout(self.classifier_dropout)
-        self.fc1 = nn.Linear(self.img_encoder_out_classes, self.classifier_mid_features)
-        self.fc2 = nn.Linear(self.classifier_mid_features, self.classifier_out_classes)
-        self.relu = nn.ReLU(inplace=True)
-
 
         self.img_encoder = ResNetClassifier(
             in_size=image_in_size,
             channels=img_encoder_channels,
-            pool_every=1,
+            pool_every=8,
             activation_type='relu',
             activation_params=dict(),
             pooling_type='avg',
@@ -298,45 +325,46 @@ class MyModel(nn.Module, metaclass=ABCMeta):
             batchnorm=img_encoder_batchnorm,
             dropout=img_encoder_dropout,
         )
-
         self.text = TextProcessor(
             embedding_tokens=text_embedding_tokens,
-            embedding_features=text_embedding_features,
+            embedding_features=text_embedding_features, #300,
             lstm_features=text_lstm_features,
             drop=text_dropout,
         )
+        
+        self.attention = Attention(
+            v_features=img_encoder_out_classes,#2048,
+            q_features=text_lstm_features,
+            mid_features=attention_mid_features,
+            glimpses=attention_glimpses,
+            drop=attention_dropout,
+        )
+        
+        self.classifier = nn.Sequential(
+            nn.Dropout(classifier_dropout),
+            nn.Linear(2 * img_encoder_out_classes + text_lstm_features, classifier_mid_features), #(2*2048+1024,256)
+            nn.ReLU(),
+            nn.Dropout(classifier_dropout),
+            nn.Linear(classifier_mid_features, classifier_out_classes),
+        )
+#         self.img_encoder = ConvClassifier(**test_params)
+        #self.IP = ImageNet(2048)
 
 
     def forward(self, x) -> Tensor:
-        """temp_img = x[0]
+        temp_img = x[0]
         batch_size = temp_img.shape[0]
-        img = self.image_enc(temp_img)
-        #img = self.img_encoder(temp_img)
-        #img = img.view(batch_size, -1)
+        img = self.img_encoder(temp_img)
+        #img = self.IP(temp_img)
+        #img = img.view((batch_size, self.img_encoder_out_classes, 1, 1))
         #print("img.shape = ",img.shape)
         
         ques = x[1]
-        #q_len = x[2]
-        #ques = self.text(ques, list(q_len.data))
-        ques = self.QP(ques)
-        combined = torch.mul(ques, img)
-        combined = F.tanh(combined)
-        #a = self.attention(img, ques)
-        #img = apply_attention(img, a)
-        #combined = torch.cat([img, ques], dim=1)
-        #print("combined.shape = ", combined.shape)
+        q_len = x[2]
+        ques = self.text(ques, list(q_len.data))
+        a = self.attention(img, ques)
+        img = apply_attention(img, a)
+        combined = torch.cat([img, ques], dim=1)
         answer = self.classifier(combined)
         #answer = self.softmax(combined)
-        return answer"""
-   
-        img = x[0]
-        ques  = x[1]
-        img = self.img_encoder(img)
-        ques = self.text(ques)
-        combined = torch.mul(ques, img)
-        combined  = self.relu(combined)
-        combined  = self.dropout(combined)
-        combined  = self.fc1(combined)
-        combined  = self.relu(combined)
-        combined  = self.dropout(combined)
-        return self.fc2(combined)
+        return answer
