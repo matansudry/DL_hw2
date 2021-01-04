@@ -171,8 +171,7 @@ class MyDataset(data.Dataset):
             self.images = self.load_images()
             with open("../data/images_"+dataset_type, 'wb') as handle:
                 pickle.dump(self.images, handle)
-                
-        self.images=self.images[0]
+        
         print("images done")
         
         #load coco_images_to_dict
@@ -186,34 +185,21 @@ class MyDataset(data.Dataset):
                 pickle.dump(self.images_dict, handle)
                 
         print("coco_images_to_dict done")
-        
                 
         self.index_to_question_number_dict = self.index_to_question_number_func()
-        
-        if os.path.isfile("../data/combine_dict"+dataset_type):
-            with open("../data/combine_dict"+dataset_type, 'rb') as handle:
-                self.combine_dict = pickle.load(handle)
-
-        else:
-            self.dataset_combine()
-            with open("../data/combine_dict"+dataset_type, 'wb') as handle:
-                pickle.dump(self.combine_dict, handle)
-        
+    
     def __getitem__(self, item):
         item = self.index_to_question_number_dict[item]
-        """q, q_length = self.questions_dict[item]
+        q, q_length = self.questions_dict[item]
         a = self.answerable[item]
-        ans = torch.zeros(self.number_of_answers_per_question)
+        temp = torch.zeros(self.number_of_answers_per_question)
         for answer_index in range(len(a[0])):
-            ans[a[0][answer_index]] = a[1][answer_index]
+            temp[a[0][answer_index]] = a[1][answer_index]
         image_id = self.question_id_to_image_id[str(item)]
         image_id = self.images_dict[image_id]
-        #v = self.images[image_id][1]
-        #v = 1
+        v = self.images[0][image_id][1]
         
-        return self.images[image_id][1], ans, q, item, q_length"""
-        temp = self.combine_dict[item]
-        return temp[0], temp[1], temp[2], temp[3], temp[4]
+        return v, temp, q, item, q_length
 
     def __len__(self) -> int:
         """
@@ -314,22 +300,6 @@ class MyDataset(data.Dataset):
         self.images_dict = images_dict
     def num_tokens(self):
         return len(self.vocab) + 1
-    
-    def dataset_combine(self):
-        self.combine_dict ={}
-        for i in tqdm.tqdm(range(len(self.index_to_question_number_dict))):
-            item = self.index_to_question_number_dict[i]
-            q, q_length = self.questions_dict[item]
-            a = self.answerable[item]
-            ans = torch.zeros(self.number_of_answers_per_question)
-            for answer_index in range(len(a[0])):
-                ans[a[0][answer_index]] = a[1][answer_index]
-            image_id = self.question_id_to_image_id[str(item)]
-            image_id = self.images_dict[image_id]
-            v = self.images[image_id][1]
-            self.combine_dict[item] = (self.images[image_id][1], ans, q, item, q_length)
-
-        
 
 
 

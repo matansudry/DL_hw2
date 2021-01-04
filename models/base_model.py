@@ -56,8 +56,8 @@ class ResidualBlock(nn.Module):
         if dropout !=0:
             main_layers.append(torch.nn.Dropout2d(p=dropout))
         if batchnorm == True:
-            main_layers.append(torch.nn.BatchNorm2d(channels[0]))
-        main_layers.append(nn.ReLU())
+            main_layers.append(torch.nn.BatchNorm2d(channels[0], eps=1e-05, momentum=0.1, affine=True, track_running_stats=True))
+        main_layers.append(nn.ReLU(inplace=True))
 
         #middle layers
         for i in range(1,N-1):
@@ -71,8 +71,9 @@ class ResidualBlock(nn.Module):
             if dropout !=0:
                 main_layers.append(torch.nn.Dropout2d(p=dropout))
             if batchnorm == True:
-                main_layers.append(torch.nn.BatchNorm2d(channels[i]))
-            main_layers.append(nn.ReLU())
+                main_layers.append(torch.nn.BatchNorm2d(channels[i], eps=1e-05, momentum=0.1, affine=True, track_running_stats=True))
+            if (i%2 == 1):
+                main_layers.append(nn.ReLU(inplace=True))
         if N > 1:
             main_layers.append(
                 nn.Conv2d(
@@ -81,15 +82,15 @@ class ResidualBlock(nn.Module):
                     kernel_size= kernel_sizes[N-1],
                     padding=(int((kernel_sizes[N-1]-1)/2),
                     int((kernel_sizes[N-1]-1)/2)), bias=True))
-        #if (in_channels != channels[N-1]):
-            #shortcut_layers.append(nn.Conv2d (in_channels, channels[N-1], kernel_size= 1, bias=False))
+        if (in_channels != channels[N-1]):
+            shortcut_layers.append(nn.Conv2d (in_channels, channels[N-1], kernel_size= 1, bias=False))
 
         self.main_path = nn.Sequential(*main_layers)
-        #self.shortcut_path = nn.Sequential(*shortcut_layers)
+        self.shortcut_path = nn.Sequential(*shortcut_layers)
 
     def forward(self, x):
         out = self.main_path(x)
-        #out = out + self.shortcut_path(x)
+        out = out + self.shortcut_path(x)
         relu = torch.nn.ReLU()
         out = relu(out)
         return out
@@ -126,19 +127,25 @@ class ResNetClassifier(nn.Module):
         self.pooling_type = pooling_type
         self.pooling_params = pooling_params
         self.feature_extractor = self._make_feature_extractor()
+        self.fc = nn.Linear(512, self.output_dim, bias=True)
 
 
     def _make_feature_extractor(self):
         in_channels, in_h, in_w, = tuple(self.in_size)
         layers = []
-        
+        self.output_dim = 2048
         # - extract number of conv layers
         N = len(self.channels)
         
         #1st layer
-        temp_in_channels = in_channels
+        temp_in_channels = 64
         temp_channels = []
         temp_kernel_sizes = []
+        
+        layers.append(nn.Conv2d(3, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False))
+        layers.append(torch.nn.BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True))
+        layers.append(nn.ReLU(inplace=True))
+        layers.append(nn.MaxPool2d(kernel_size=3, stride=2, padding=1, dilation=1, ceil_mode=False))
         
         #middle layers
         for i in range(1,N):
@@ -150,36 +157,50 @@ class ResNetClassifier(nn.Module):
                         in_channels=temp_in_channels,
                         channels=temp_channels,
                         kernel_sizes=temp_kernel_sizes,
-                        batchnorm=self.batchnorm,
-                        dropout=self.dropout,
-                        activation_type=self.activation_type))
+                        batchnorm= self.batchnorm,
+                        dropout= self.dropout,
+                        activation_type= self.activation_type))
                 temp_in_channels = self.channels[i-1]
                 temp_channels = []
                 temp_kernel_sizes = []
-                layers.append(nn.AvgPool2d(self.pooling_params['kernel_size']))
+                #layers.append(nn.AvgPool2d(self.pooling_params['kernel_size']))
         temp_channels.append(self.channels[N-1])
         temp_kernel_sizes.append(3)
         layers.append(ResidualBlock(
                 in_channels=temp_in_channels,
                 channels=temp_channels,
                 kernel_sizes=temp_kernel_sizes,
-                batchnorm=self.batchnorm,
-                dropout=self.dropout,
-                activation_type=self.activation_type))
+                batchnorm= self.batchnorm,
+                dropout= self.dropout,
+                activation_type= self.activation_type))
         if ((N % self.pool_every)==0):
-            layers.append(nn.AvgPool2d(self.pooling_params['kernel_size']))
+#             layers.append(nn.AvgPool2d(self.pooling_params['kernel_size']))
+                layers.append(torch.nn.AdaptiveAvgPool2d(output_size=(1, 1))) ########################################################
+        #layers.append(nn.Linear(1000, self.output_dim, bias=True))
         # add to go to 1x1
-        layers.append(nn.AvgPool2d(3))
-        layers.append(nn.AvgPool2d(4))
+        #layers.append(nn.AvgPool2d(2))
+        #layers.append(nn.AvgPool2d(15))
         seq = nn.Sequential(*layers)
         return seq
-    
+    	
     
     def forward(self, x):
-        features = self.feature_extractor(x)
-        return features
+        out = self.feature_extractor(x)
+        batch_size = out.shape[0]
+        out = out.view(batch_size, -1)
+        #print("out.shape = ", out.shape)
+        out = self.fc(out)
+        out = out.view(batch_size,-1,1,1)
+        #shortcut = self.shortcut_path(x)
+        #print("shortcut.shape = ", shortcut.shape)
+        #print("out.shape = ", out.shape)
+        #out = out + shortcut
+        #out = out.view(batch_size,-1,1,1)
+        #relu = torch.nn.ReLU()
+        #out = relu(out)
+        return out 
 
-    
+     
 class TextProcessor(nn.Module):
     def __init__(self, embedding_tokens, embedding_features, lstm_features, drop=0.0):
         super(TextProcessor, self).__init__()
@@ -252,6 +273,19 @@ def tile_2d_over_nd(feature_vector, feature_map):
     tiled = feature_vector.view(n, c, *([1] * spatial_size)).expand_as(feature_map)
     return tiled    
 
+class ImageNet(nn.Module):
+    def __init__(self, output_dim):
+        super(ImageNet, self).__init__()
+        from torchvision import models
+        self.model = models.resnet34(pretrained=False)
+        self.fc = nn.Linear(1000, output_dim, bias=True)
+
+
+    def forward(self, image_tensor):
+        x = self.model(image_tensor)
+        x = self.fc(x)
+        return F.normalize(x, dim=1, p=2)
+
 class MyModel(nn.Module, metaclass=ABCMeta):
     """
     Example for a simple model
@@ -283,11 +317,11 @@ class MyModel(nn.Module, metaclass=ABCMeta):
         self.img_encoder = ResNetClassifier(
             in_size=image_in_size,
             channels=img_encoder_channels,
-            pool_every=1, #2,
+            pool_every=8,
             activation_type='relu',
             activation_params=dict(),
             pooling_type='avg',
-            pooling_params=dict(kernel_size=2),
+            pooling_params=dict(kernel_size=3),
             batchnorm=img_encoder_batchnorm,
             dropout=img_encoder_dropout,
         )
@@ -314,10 +348,17 @@ class MyModel(nn.Module, metaclass=ABCMeta):
             nn.Linear(classifier_mid_features, classifier_out_classes),
         )
 #         self.img_encoder = ConvClassifier(**test_params)
+        #self.IP = ImageNet(2048)
+
 
     def forward(self, x) -> Tensor:
         temp_img = x[0]
+        batch_size = temp_img.shape[0]
         img = self.img_encoder(temp_img)
+        #img = self.IP(temp_img)
+        #img = img.view((batch_size, self.img_encoder_out_classes, 1, 1))
+        #print("img.shape = ",img.shape)
+        
         ques = x[1]
         q_len = x[2]
         ques = self.text(ques, list(q_len.data))
@@ -325,4 +366,5 @@ class MyModel(nn.Module, metaclass=ABCMeta):
         img = apply_attention(img, a)
         combined = torch.cat([img, ques], dim=1)
         answer = self.classifier(combined)
+        #answer = self.softmax(combined)
         return answer

@@ -44,9 +44,9 @@ CFG_SCHEMA = {
         'classifier_out_classes': int,
         'lr': {
             'lr_value': float,
-            'lr_decay': int,
-            'lr_gamma': float,
-            'lr_step_size': int,
+            #'lr_decay': int,
+            #'lr_gamma': float,
+            #'lr_step_size': int,
         },
     },
 }

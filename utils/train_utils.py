@@ -60,9 +60,9 @@ class TrainParams:
         self.num_epochs = kwargs['num_epochs']
 
         self.lr = kwargs['lr']['lr_value']
-        self.lr_decay = kwargs['lr']['lr_decay']
-        self.lr_gamma = kwargs['lr']['lr_gamma']
-        self.lr_step_size = kwargs['lr']['lr_step_size']
+        #self.lr_decay = kwargs['lr']['lr_decay']
+        #self.lr_gamma = kwargs['lr']['lr_gamma']
+        #self.lr_step_size = kwargs['lr']['lr_step_size']
 
         self.grad_clip = kwargs['grad_clip']
         self.save_model = kwargs['save_model']

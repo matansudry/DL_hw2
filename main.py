@@ -7,8 +7,8 @@ import torch
 import hydra
 
 from train import train
-from dataset import MyDataset#, CocoImages
-from models.base_model import MyModel
+from dataset_temp import MyDataset#, CocoImages
+from models.base_model_old import MyModel
 from torch.utils.data import DataLoader
 from utils import main_utils, train_utils#, data_loader
 from utils.train_logger import TrainLogger
@@ -47,7 +47,7 @@ def main(cfg: DictConfig) -> None:
                               train=False,
                               answerable_only = False
                              )
-    
+
     
     train_loader = DataLoader(train_dataset, cfg['train']['batch_size'], shuffle=True,
                               num_workers=cfg['main']['num_workers'])
@@ -56,7 +56,11 @@ def main(cfg: DictConfig) -> None:
 
     # Init model
     image_in_size_input = ((3,224,224))
-    img_encoder_channels_input = [32, 128, 512, 1024]
+    #img_encoder_channels_input = [64, 64, 64, 64, 64, 64, 64, 64, 128, 128, 128, 128, 128, 128, 128, 128, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 512, 512, 512, 512, 512]
+
+    #img_encoder_channels_input = [64, 64, 64, 64, 128, 128, 128, 128, 256, 256, 256, 256, 256, 256, 256, 512]
+    img_encoder_channels_input = [16, 32, 128]
+
     model = MyModel(image_in_size=image_in_size_input,
         img_encoder_out_classes=cfg['train']['img_encoder_out_classes'],
         img_encoder_channels=img_encoder_channels_input,
