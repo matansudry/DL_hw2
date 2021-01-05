@@ -50,7 +50,7 @@ def main(cfg: DictConfig) -> None:
     # Init model
     image_in_size_input = ((3,224,224))
     #img_encoder_channels_input = [64, 64, 64, 64, 64, 64, 64, 64, 128, 128, 128, 128, 128, 128, 128, 128, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 256, 512, 512, 512, 512, 512]
-    img_encoder_channels_input = [64, 64, 64, 64, 128, 128, 128, 128, 256, 256, 256, 256, 256, 256, 256, 512]
+    img_encoder_channels_input = [64, 64, 128, 128, 256, 256, 512]
 
     model = MyModel(image_in_size=image_in_size_input,
         img_encoder_out_classes=cfg['train']['img_encoder_out_classes'],

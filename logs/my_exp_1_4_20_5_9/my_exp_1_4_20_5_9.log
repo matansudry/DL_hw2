@@ -1,0 +1,125 @@
+[2021-01-04 20:05:09,976] [TRAIN] - main:
+  experiment_name_prefix: my_exp
+  seed: 1
+  num_workers: 6
+  parallel: true
+  gpus_to_use: 0,1
+  trains: false
+  paths:
+    train: data/train.pkl
+    validation: data/validation.pkl
+    logs: logs/
+    train_images: ../../../datashare/train2014
+    train_qeustions: ../../../datashare/v2_OpenEnded_mscoco_train2014_questions.json
+    train_answers: ../../../datashare/v2_mscoco_train2014_annotations.json
+    val_images: ../../../datashare/val2014
+    val_qeustions: ../../../datashare/v2_OpenEnded_mscoco_val2014_questions.json
+    val_answers: ../../../datashare/v2_mscoco_val2014_annotations.json
+train:
+  num_epochs: 30
+  grad_clip: 0.0
+  dropout: 0.2
+  num_hid: 20
+  batch_size: 64
+  save_model: true
+  img_encoder_out_classes: 4096
+  img_encoder_batchnorm: true
+  img_encoder_dropout: 0.0
+  text_embedding_tokens: 13659
+  text_embedding_features: 300
+  text_lstm_features: 4096
+  text_dropout: 0.4
+  classifier_dropout: 0.5
+  classifier_mid_features: 512
+  classifier_out_classes: 2410
+  lr:
+    lr_value: 0.001
+
+[2021-01-04 20:05:55,253] [TRAIN] - DataParallel(
+  (module): MyModel(
+    (dropout): Dropout(p=0.5, inplace=False)
+    (fc1): Linear(in_features=4096, out_features=512, bias=True)
+    (fc2): Linear(in_features=512, out_features=2410, bias=True)
+    (relu): ReLU(inplace=True)
+    (img_encoder): ResNetClassifier(
+      (feature_extractor): Sequential(
+        (0): Conv2d(3, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+        (1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU(inplace=True)
+        (3): MaxPool2d(kernel_size=3, stride=2, padding=1, dilation=1, ceil_mode=False)
+        (4): ResidualBlock(
+          (main_path): Sequential(
+            (0): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (2): ReLU(inplace=True)
+          )
+        )
+        (5): ResidualBlock(
+          (main_path): Sequential(
+            (0): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (2): ReLU(inplace=True)
+          )
+        )
+        (6): ResidualBlock(
+          (main_path): Sequential(
+            (0): Conv2d(64, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (2): ReLU(inplace=True)
+          )
+        )
+        (7): ResidualBlock(
+          (main_path): Sequential(
+            (0): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (2): ReLU(inplace=True)
+          )
+        )
+        (8): ResidualBlock(
+          (main_path): Sequential(
+            (0): Conv2d(128, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (2): ReLU(inplace=True)
+          )
+        )
+        (9): ResidualBlock(
+          (main_path): Sequential(
+            (0): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (2): ReLU(inplace=True)
+          )
+        )
+        (10): ResidualBlock(
+          (main_path): Sequential(
+            (0): Conv2d(256, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (2): ReLU(inplace=True)
+          )
+        )
+        (11): AdaptiveAvgPool2d(output_size=(1, 1))
+      )
+      (fc1): Linear(in_features=512, out_features=1000, bias=True)
+      (fc2): Linear(in_features=1000, out_features=4096, bias=True)
+      (relu): ReLU(inplace=True)
+    )
+    (text): TextProcessor(
+      (embedding): Embedding(13659, 300, padding_idx=0)
+      (drop): Dropout(p=0.4, inplace=False)
+      (tanh): Tanh()
+      (lstm): LSTM(300, 1024, num_layers=2)
+      (fc): Linear(in_features=1024, out_features=4096, bias=True)
+    )
+  )
+)
+Params: 32444342
+[2021-01-04 21:39:27,128] [TRAIN] - (EPOCH 0) Time: 5611.87, Gradient norm: 3.3913, Train loss: 1.33, Train Score: 30.58, Val score: 32.02
+[2021-01-04 23:12:37,570] [TRAIN] - (EPOCH 1) Time: 5589.73, Gradient norm: 2.9273, Train loss: 0.87, Train Score: 33.11, Val score: 34.37
+[2021-01-05 00:45:53,449] [TRAIN] - (EPOCH 2) Time: 5591.02, Gradient norm: 2.7094, Train loss: 0.79, Train Score: 34.64, Val score: 36.06
+[2021-01-05 02:19:09,247] [TRAIN] - (EPOCH 3) Time: 5592.29, Gradient norm: 2.5742, Train loss: 0.78, Train Score: 36.28, Val score: 36.88
+[2021-01-05 03:52:24,494] [TRAIN] - (EPOCH 4) Time: 5591.83, Gradient norm: 2.4778, Train loss: 0.80, Train Score: 37.77, Val score: 38.76
+[2021-01-05 05:25:39,233] [TRAIN] - (EPOCH 5) Time: 5591.47, Gradient norm: 2.4080, Train loss: 0.82, Train Score: 38.78, Val score: 39.26
+[2021-01-05 06:58:54,133] [TRAIN] - (EPOCH 6) Time: 5591.41, Gradient norm: 2.3551, Train loss: 0.86, Train Score: 39.59, Val score: 40.04
+[2021-01-05 08:32:07,934] [TRAIN] - (EPOCH 7) Time: 5592.55, Gradient norm: 2.3143, Train loss: 0.89, Train Score: 40.01, Val score: 40.52
+[2021-01-05 10:05:22,545] [TRAIN] - (EPOCH 8) Time: 5592.31, Gradient norm: 2.2798, Train loss: 0.93, Train Score: 40.41, Val score: 40.90
+[2021-01-05 11:38:36,416] [TRAIN] - (EPOCH 9) Time: 5590.70, Gradient norm: 2.2523, Train loss: 0.96, Train Score: 40.72, Val score: 40.58
+[2021-01-05 13:11:48,495] [TRAIN] - (EPOCH 10) Time: 5592.08, Gradient norm: 2.2285, Train loss: 1.00, Train Score: 41.12, Val score: 41.21

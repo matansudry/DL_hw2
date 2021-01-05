@@ -37,7 +37,7 @@ class ResidualBlock(nn.Module):
 
         self.main_path, self.shortcut_path = None, None
         main_layers = []
-        shortcut_layers = []
+        #shortcut_layers = []
 
         # - extract number of conv layers
         N = len(channels)
@@ -79,25 +79,25 @@ class ResidualBlock(nn.Module):
                     kernel_size= kernel_sizes[N-1],
                     padding=(int((kernel_sizes[N-1]-1)/2),
                     int((kernel_sizes[N-1]-1)/2)), bias=True))
-        if (in_channels != channels[N-1]):
-            shortcut_layers.append(nn.Conv2d (in_channels, channels[N-1], kernel_size= 1, bias=False))
+        #if (in_channels != channels[N-1]):
+            #shortcut_layers.append(nn.Conv2d (in_channels, channels[N-1], kernel_size= 1, bias=False))
 
         self.main_path = nn.Sequential(*main_layers)
-        self.shortcut_path = nn.Sequential(*shortcut_layers)
+        #self.shortcut_path = nn.Sequential(*shortcut_layers)
 
     def forward(self, x):
         out = self.main_path(x)
-        out = out + self.shortcut_path(x)
+        #out = out + self.shortcut_path(x)
         relu = torch.nn.ReLU()
         out = relu(out)
         return out
-
 
 class ResNetClassifier(nn.Module):
     def __init__(
         self,
         in_size,
         channels,
+        img_encoder_out_classes,
         pool_every,
 #         hidden_dims,
         activation_type: str = "relu",
@@ -118,6 +118,7 @@ class ResNetClassifier(nn.Module):
         self.conv_params=dict(kernel_size=3, stride=1, padding=1)
         self.in_size = in_size
         self.channels = channels
+        self.img_encoder_out_classes= img_encoder_out_classes
         self.pool_every = pool_every
         self.activation_type = activation_type
         self.activation_params = activation_params
@@ -125,14 +126,13 @@ class ResNetClassifier(nn.Module):
         self.pooling_params = pooling_params
         self.feature_extractor = self._make_feature_extractor()
         self.fc1 = nn.Linear(512, 1000, bias=True)
-        self.fc2 = nn.Linear(1000, self.output_dim, bias=True)
+        self.fc2 = nn.Linear(1000, self.img_encoder_out_classes, bias=True)
         self.relu = nn.ReLU(inplace=True)
 
 
     def _make_feature_extractor(self):
         in_channels, in_h, in_w, = tuple(self.in_size)
         layers = []
-        self.output_dim = 2048
         # - extract number of conv layers
         N = len(self.channels)
         
@@ -193,14 +193,13 @@ class TextProcessor(nn.Module):
         self.drop = nn.Dropout(drop)
         self.tanh = nn.Tanh()
         self.lstm = nn.LSTM(input_size=embedding_features,
-                            hidden_size=lstm_features,
-                            num_layers=1)
-        self.features = lstm_features
-
+                            hidden_size=1024,
+                            num_layers=2)
         self._init_lstm(self.lstm.weight_ih_l0)
         self._init_lstm(self.lstm.weight_hh_l0)
         self.lstm.bias_ih_l0.data.zero_()
         self.lstm.bias_hh_l0.data.zero_()
+        self.fc = nn.Linear(1024, lstm_features, bias=True)
 
         init.xavier_uniform(self.embedding.weight)
 
@@ -208,13 +207,16 @@ class TextProcessor(nn.Module):
         for w in weight.chunk(4, 0):
             init.xavier_uniform(w)
 
-    def forward(self, ques, q_len):
+    def forward(self, ques):
         embedded = self.embedding(ques)
-        tanhed = self.tanh(self.drop(embedded))
-        packed = pack_padded_sequence(tanhed, q_len, batch_first=True, enforce_sorted=False)
-        _, (_, c) = self.lstm(packed)
-        return c.squeeze(0)
-
+        packed = self.tanh(self.drop(embedded))
+        packed  = packed .transpose(0, 1)
+        #packed = pack_padded_sequence(tanhed, q_len, batch_first=True, enforce_sorted=False)
+        _, (h, c) = self.lstm(packed)
+        packed = torch.cat((h, c), 2)
+        packed = packed.transpose(0, 1)
+        packed = packed.reshape(packed.size()[0], -1)
+        return packed
 
 #need to remove it
 """class ImageNet(nn.Module):
@@ -290,6 +292,7 @@ class MyModel(nn.Module, metaclass=ABCMeta):
         self.img_encoder = ResNetClassifier(
             in_size=image_in_size,
             channels=img_encoder_channels,
+            img_encoder_out_classes=self.img_encoder_out_classes,
             pool_every=1,
             activation_type='relu',
             activation_params=dict(),

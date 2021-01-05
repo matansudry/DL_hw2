@@ -28,7 +28,7 @@ train:
   grad_clip: 0.0
   dropout: 0.2
   num_hid: 20
-  batch_size: 128
+  batch_size: 64
   save_model: True
   img_encoder_out_classes: 4096
   img_encoder_batchnorm: True
