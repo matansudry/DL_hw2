@@ -4,7 +4,7 @@ import json
 import re
 import pickle
 
-data_path = '../../../../datashare/'
+data_path = '../../../datashare/'
 image_train_path = os.path.join(data_path, 'train2014')
 image_val_path = os.path.join(data_path, 'val2014')
 train_image_prefix = 'COCO_train2014_'
@@ -160,8 +160,7 @@ def filter_answers(answers_dset, min_occurence):
         if len(occurence[answer]) < min_occurence:
             occurence.pop(answer)
 
-    print('Num of answers that appear >= %d times: %d' % (
-        min_occurence, len(occurence)))
+    #print('Num of answers that appear >= %d times: %d' % (min_occurence, len(occurence)))
     return occurence
 
 
@@ -239,10 +238,10 @@ def compute_target(answers_dset, question_dset, ans2label, q2label, name, cache_
             'scores': scores
         })
 
-    print(cache_root)
+    #print(cache_root)
     # os.mkdir(cache_root)
     cache_file = os.path.join(cache_root, name + '_target.pkl')
-    print(cache_file)
+    #print(cache_file)
     with open(cache_file, 'wb') as f:
         pickle.dump(target, f)
     return target
@@ -280,8 +279,8 @@ def create_q2label(train_questions, name, cache_root):
 
 def preprocessing_vocab():
     occurence = filter_answers(train_annot, 9)
-    ans2label = create_ans2label(occurence, 'trainval', "../../data/cache")
-    q2label = create_q2label(train_questions, 'trainval', "../../data/cache")
-    compute_target(train_annot, train_questions, ans2label, q2label, 'train', "../../data/cache")
-    compute_target(val_annot, val_questions, ans2label, q2label, 'val', "../../data/cache")
+    ans2label = create_ans2label(occurence, 'trainval', "../data/cache")
+    q2label = create_q2label(train_questions, 'trainval', "../data/cache")
+    compute_target(train_annot, train_questions, ans2label, q2label, 'train', "../data/cache")
+    compute_target(val_annot, val_questions, ans2label, q2label, 'val', "../data/cache")
 

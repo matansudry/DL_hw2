@@ -52,6 +52,7 @@ class MyDataset(data.Dataset):
                 vocab_json = unpickler.load()
 
         else:
+            print("creating vocab")
             preprocessing_vocab()
             with open("../data/cache/trainval_q2label.pkl", "rb") as f:
                 unpickler = pickle.Unpickler(f)
@@ -83,6 +84,7 @@ class MyDataset(data.Dataset):
             print("opening existing Qs")
             self.questions = torch.load("../data/questions_"+dataset_type)
         else:
+            print("creating Qs")
             self.questions = list(self.prepare_questions())
             self.questions = [self._encode_question(q, self.token_to_index) for q in self.questions] 
             torch.save(self.questions, "../data/questions_"+dataset_type)
@@ -94,6 +96,7 @@ class MyDataset(data.Dataset):
             with open("../data/question_id_to_image_id_"+dataset_type, 'r') as fd:
                 self.question_id_to_image_id = json.load(fd)
         else:
+            print("creating Q id to Image id")
             self.question_id_to_image_id = self.question_id_to_image_id()
             with open("../data/question_id_to_image_id_"+dataset_type, 'w') as fd:
                 json.dump(self.question_id_to_image_id, fd)
@@ -108,6 +111,7 @@ class MyDataset(data.Dataset):
                 self.answerable = pickle.load(handle)
         else:
             #preprocess A
+            print("creating answers")
             self.answerable = self.preprocess_answers(train)
             with open("../data/answerable_with_labels_only_"+dataset_type+"_"+str(answerable_only), 'wb') as handle:
                 pickle.dump(self.answerable, handle)
@@ -119,6 +123,7 @@ class MyDataset(data.Dataset):
                 self.img2idx = pickle.load(handle)
 
         else:
+            print("creating images")
             image_preprocessing_master()
             with open("../data/cache/img2idx_"+dataset_type+".pkl", 'rb') as handle:
                 self.img2idx = pickle.load(handle)

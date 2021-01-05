@@ -1,19 +1,10 @@
-"""
-    Example for a simple model
-"""
-
 from abc import ABCMeta
-# from nets.fc import FCNet
 import torch
 from torch import nn, Tensor
 import itertools as it
 from torch.nn.utils.rnn import pack_padded_sequence
 import torch.nn.init as init
 import torch.nn.functional as F
-
-
-
-#POOLINGS = {"avg": nn.AvgPool2d, "max": nn.MaxPool2d}
 
 class ResidualBlock(nn.Module):
     """
@@ -37,7 +28,6 @@ class ResidualBlock(nn.Module):
 
         self.main_path, self.shortcut_path = None, None
         main_layers = []
-        #shortcut_layers = []
 
         # - extract number of conv layers
         N = len(channels)
@@ -79,15 +69,11 @@ class ResidualBlock(nn.Module):
                     kernel_size= kernel_sizes[N-1],
                     padding=(int((kernel_sizes[N-1]-1)/2),
                     int((kernel_sizes[N-1]-1)/2)), bias=True))
-        #if (in_channels != channels[N-1]):
-            #shortcut_layers.append(nn.Conv2d (in_channels, channels[N-1], kernel_size= 1, bias=False))
 
         self.main_path = nn.Sequential(*main_layers)
-        #self.shortcut_path = nn.Sequential(*shortcut_layers)
 
     def forward(self, x):
         out = self.main_path(x)
-        #out = out + self.shortcut_path(x)
         relu = torch.nn.ReLU()
         out = relu(out)
         return out
@@ -99,7 +85,6 @@ class ResNetClassifier(nn.Module):
         channels,
         img_encoder_out_classes,
         pool_every,
-#         hidden_dims,
         activation_type: str = "relu",
         activation_params: dict = {},
         pooling_type: str = "max",
@@ -211,60 +196,13 @@ class TextProcessor(nn.Module):
         embedded = self.embedding(ques)
         packed = self.tanh(self.drop(embedded))
         packed  = packed .transpose(0, 1)
-        #packed = pack_padded_sequence(tanhed, q_len, batch_first=True, enforce_sorted=False)
         _, (h, c) = self.lstm(packed)
         packed = torch.cat((h, c), 2)
         packed = packed.transpose(0, 1)
         packed = packed.reshape(packed.size()[0], -1)
         return packed
 
-#need to remove it
-"""class ImageNet(nn.Module):
-    def __init__(self, output_dim):
-        super(ImageNet, self).__init__()
-        from torchvision import models
-        self.model = models.resnet34(pretrained=False)
-        self.fc = nn.Linear(1000, output_dim, bias=True)
-
-
-    def forward(self, image_tensor):
-        x = self.model(image_tensor)
-        x = self.fc(x)
-        return F.normalize(x, dim=1, p=2)"""
-
-#need to remove it
-"""class QuestionNet(nn.Module):
-    def __init__(self, word_embedding_dim, lstm_hidden_dim, word_vocab_size, output_dim, lstm_drop=0.0):
-        super(QuestionNet, self).__init__()
-
-        # LSTM unit
-        self.word_embedding = nn.Embedding(word_vocab_size, word_embedding_dim, padding_idx=0)
-        self.dropout = nn.Dropout(p=lstm_drop)
-        self.lstm_input_dim = self.word_embedding.embedding_dim
-        self.lstm_hidden_dim = lstm_hidden_dim
-        self.lstm = nn.LSTM(input_size=self.lstm_input_dim, hidden_size=self.lstm_hidden_dim, num_layers=2)
-        self.fc = nn.Linear(output_dim, output_dim, bias=True)
-        # self.fc2 = nn.Linear(21 * self.lstm_hidden_dim, q_output_dim, bias=True)
-        # self.output = q_output_dim
-
-
-    def forward(self, questions_tensor):
-        t = self.word_embedding(questions_tensor)
-        t = self.dropout(t)
-        t = F.tanh(t)
-        t = t.transpose(0, 1)
-        _, (h, c) = self.lstm(t)
-        t = torch.cat((h, c), 2)
-        t = t.transpose(0, 1)
-        t = t.reshape(t.size()[0], -1)
-        t = F.tanh(t)
-        return self.fc(t)"""
-
 class MyModel(nn.Module, metaclass=ABCMeta):
-    """
-    Example for a simple model
-    """
-    #def __init__(self,):# input_dim: int = 50, num_hid: int = 256, output_dim: int = 2, dropout: float = 0.2):
     def __init__(
         self, image_in_size=((3,224,224)), img_encoder_out_classes=1024, img_encoder_channels=[32, 128, 512, 1024],
         img_encoder_batchnorm=True, img_encoder_dropout=0.5, text_embedding_tokens=15193, text_embedding_features=100,
@@ -311,27 +249,6 @@ class MyModel(nn.Module, metaclass=ABCMeta):
 
 
     def forward(self, x) -> Tensor:
-        """temp_img = x[0]
-        batch_size = temp_img.shape[0]
-        img = self.image_enc(temp_img)
-        #img = self.img_encoder(temp_img)
-        #img = img.view(batch_size, -1)
-        #print("img.shape = ",img.shape)
-        
-        ques = x[1]
-        #q_len = x[2]
-        #ques = self.text(ques, list(q_len.data))
-        ques = self.QP(ques)
-        combined = torch.mul(ques, img)
-        combined = F.tanh(combined)
-        #a = self.attention(img, ques)
-        #img = apply_attention(img, a)
-        #combined = torch.cat([img, ques], dim=1)
-        #print("combined.shape = ", combined.shape)
-        answer = self.classifier(combined)
-        #answer = self.softmax(combined)
-        return answer"""
-   
         img = x[0]
         ques  = x[1]
         img = self.img_encoder(img)
