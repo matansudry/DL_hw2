@@ -1,0 +1,144 @@
+[2021-01-06 07:58:31,447] [TRAIN] - main:
+  experiment_name_prefix: my_exp
+  seed: 1
+  num_workers: 6
+  parallel: true
+  gpus_to_use: 0,1
+  trains: false
+  paths:
+    train: data/train.pkl
+    validation: data/validation.pkl
+    logs: logs/
+    train_images: ../../../datashare/train2014
+    train_qeustions: ../../../datashare/v2_OpenEnded_mscoco_train2014_questions.json
+    train_answers: ../../../datashare/v2_mscoco_train2014_annotations.json
+    val_images: ../../../datashare/val2014
+    val_qeustions: ../../../datashare/v2_OpenEnded_mscoco_val2014_questions.json
+    val_answers: ../../../datashare/v2_mscoco_val2014_annotations.json
+train:
+  num_epochs: 30
+  grad_clip: 0.0
+  dropout: 0.2
+  num_hid: 20
+  batch_size: 64
+  save_model: true
+  img_encoder_out_classes: 4096
+  img_encoder_batchnorm: true
+  img_encoder_dropout: 0.0
+  text_embedding_tokens: 13659
+  text_embedding_features: 300
+  text_lstm_features: 4096
+  text_dropout: 0.4
+  classifier_dropout: 0.5
+  classifier_mid_features: 512
+  classifier_out_classes: 2410
+  lr:
+    lr_value: 0.001
+
+[2021-01-06 07:59:14,762] [TRAIN] - DataParallel(
+  (module): MyModel(
+    (dropout): Dropout(p=0.5, inplace=False)
+    (fc1): Linear(in_features=4096, out_features=512, bias=True)
+    (fc2): Linear(in_features=512, out_features=2410, bias=True)
+    (relu): ReLU(inplace=True)
+    (img_encoder): ResNetClassifier(
+      (feature_extractor): Sequential(
+        (0): Conv2d(3, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+        (1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU(inplace=True)
+        (3): MaxPool2d(kernel_size=3, stride=2, padding=1, dilation=1, ceil_mode=False)
+        (4): ResidualBlock(
+          (main_path): Sequential(
+            (0): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (2): ReLU(inplace=True)
+          )
+        )
+        (5): ResidualBlock(
+          (main_path): Sequential(
+            (0): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (2): ReLU(inplace=True)
+          )
+        )
+        (6): ResidualBlock(
+          (main_path): Sequential(
+            (0): Conv2d(64, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (2): ReLU(inplace=True)
+          )
+        )
+        (7): ResidualBlock(
+          (main_path): Sequential(
+            (0): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (2): ReLU(inplace=True)
+          )
+        )
+        (8): ResidualBlock(
+          (main_path): Sequential(
+            (0): Conv2d(128, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (2): ReLU(inplace=True)
+          )
+        )
+        (9): ResidualBlock(
+          (main_path): Sequential(
+            (0): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (2): ReLU(inplace=True)
+          )
+        )
+        (10): ResidualBlock(
+          (main_path): Sequential(
+            (0): Conv2d(256, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (2): ReLU(inplace=True)
+          )
+        )
+        (11): AdaptiveAvgPool2d(output_size=(1, 1))
+      )
+      (fc1): Linear(in_features=512, out_features=1000, bias=True)
+      (fc2): Linear(in_features=1000, out_features=4096, bias=True)
+      (relu): ReLU(inplace=True)
+    )
+    (text): TextProcessor(
+      (embedding): Embedding(13659, 300, padding_idx=0)
+      (drop): Dropout(p=0.4, inplace=False)
+      (tanh): Tanh()
+      (lstm): LSTM(300, 1024, num_layers=2)
+      (fc): Linear(in_features=1024, out_features=4096, bias=True)
+    )
+  )
+)
+Params: 32444342
+[2021-01-06 09:32:50,465] [TRAIN] - (EPOCH 0) Time: 5615.70, Gradient norm: 3.4400, Train loss: 1.28, Train Score: 30.45, Val score: 32.78
+[2021-01-06 11:06:18,827] [TRAIN] - (EPOCH 1) Time: 5607.65, Gradient norm: 2.8971, Train loss: 0.82, Train Score: 33.56, Val score: 35.13
+[2021-01-06 12:39:52,825] [TRAIN] - (EPOCH 2) Time: 5609.85, Gradient norm: 2.6385, Train loss: 0.78, Train Score: 35.82, Val score: 37.97
+[2021-01-06 14:13:19,613] [TRAIN] - (EPOCH 3) Time: 5603.82, Gradient norm: 2.4860, Train loss: 0.79, Train Score: 37.83, Val score: 38.69
+[2021-01-06 15:46:46,957] [TRAIN] - (EPOCH 4) Time: 5604.41, Gradient norm: 2.3914, Train loss: 0.81, Train Score: 39.00, Val score: 39.98
+[2021-01-06 17:20:21,088] [TRAIN] - (EPOCH 5) Time: 5609.99, Gradient norm: 2.3276, Train loss: 0.84, Train Score: 39.84, Val score: 40.47
+[2021-01-06 18:53:56,991] [TRAIN] - (EPOCH 6) Time: 5613.36, Gradient norm: 2.2759, Train loss: 0.87, Train Score: 40.46, Val score: 40.97
+[2021-01-06 20:27:29,828] [TRAIN] - (EPOCH 7) Time: 5609.61, Gradient norm: 2.2392, Train loss: 0.91, Train Score: 40.91, Val score: 41.55
+[2021-01-06 22:00:55,959] [TRAIN] - (EPOCH 8) Time: 5603.59, Gradient norm: 2.2056, Train loss: 0.95, Train Score: 41.41, Val score: 41.79
+[2021-01-06 23:34:28,673] [TRAIN] - (EPOCH 9) Time: 5610.38, Gradient norm: 2.1780, Train loss: 1.01, Train Score: 41.73, Val score: 41.68
+[2021-01-07 01:07:57,403] [TRAIN] - (EPOCH 10) Time: 5608.73, Gradient norm: 2.1548, Train loss: 1.07, Train Score: 41.98, Val score: 42.13
+[2021-01-07 02:41:31,414] [TRAIN] - (EPOCH 11) Time: 5609.91, Gradient norm: 2.1339, Train loss: 1.12, Train Score: 42.37, Val score: 42.43
+[2021-01-07 04:15:09,200] [TRAIN] - (EPOCH 12) Time: 5613.67, Gradient norm: 2.1148, Train loss: 1.18, Train Score: 42.68, Val score: 42.46
+[2021-01-07 05:48:45,557] [TRAIN] - (EPOCH 13) Time: 5614.49, Gradient norm: 2.0988, Train loss: 1.23, Train Score: 42.82, Val score: 42.75
+[2021-01-07 07:22:23,131] [TRAIN] - (EPOCH 14) Time: 5616.21, Gradient norm: 2.0852, Train loss: 1.29, Train Score: 43.16, Val score: 42.73
+[2021-01-07 08:55:58,036] [TRAIN] - (EPOCH 15) Time: 5614.90, Gradient norm: 2.0731, Train loss: 1.34, Train Score: 43.26, Val score: 42.77
+[2021-01-07 10:29:49,136] [TRAIN] - (EPOCH 16) Time: 5627.29, Gradient norm: 2.0603, Train loss: 1.40, Train Score: 43.47, Val score: 42.97
+[2021-01-07 12:03:25,530] [TRAIN] - (EPOCH 17) Time: 5613.81, Gradient norm: 2.0502, Train loss: 1.45, Train Score: 43.70, Val score: 43.25
+[2021-01-07 13:37:06,107] [TRAIN] - (EPOCH 18) Time: 5617.91, Gradient norm: 2.0418, Train loss: 1.53, Train Score: 43.95, Val score: 43.29
+[2021-01-07 15:10:50,340] [TRAIN] - (EPOCH 19) Time: 5620.11, Gradient norm: 2.0321, Train loss: 1.59, Train Score: 44.10, Val score: 43.33
+[2021-01-07 16:44:27,846] [TRAIN] - (EPOCH 20) Time: 5614.22, Gradient norm: 2.0240, Train loss: 1.65, Train Score: 44.31, Val score: 43.62
+[2021-01-07 18:18:04,116] [TRAIN] - (EPOCH 21) Time: 5614.80, Gradient norm: 2.0173, Train loss: 1.70, Train Score: 44.39, Val score: 43.78
+[2021-01-07 19:51:42,834] [TRAIN] - (EPOCH 22) Time: 5615.56, Gradient norm: 2.0100, Train loss: 1.75, Train Score: 44.54, Val score: 43.79
+[2021-01-07 21:25:29,201] [TRAIN] - (EPOCH 23) Time: 5623.69, Gradient norm: 2.0062, Train loss: 1.81, Train Score: 44.71, Val score: 43.88
+[2021-01-07 22:59:08,433] [TRAIN] - (EPOCH 24) Time: 5617.22, Gradient norm: 2.0010, Train loss: 1.87, Train Score: 44.77, Val score: 44.03
+[2021-01-08 00:32:46,142] [TRAIN] - (EPOCH 25) Time: 5613.94, Gradient norm: 1.9953, Train loss: 1.91, Train Score: 44.87, Val score: 44.01
+[2021-01-08 02:06:22,229] [TRAIN] - (EPOCH 26) Time: 5616.09, Gradient norm: 1.9906, Train loss: 1.96, Train Score: 45.00, Val score: 44.01
+[2021-01-08 03:39:54,389] [TRAIN] - (EPOCH 27) Time: 5612.16, Gradient norm: 1.9881, Train loss: 2.03, Train Score: 45.02, Val score: 44.03
+[2021-01-08 05:13:26,166] [TRAIN] - (EPOCH 28) Time: 5611.77, Gradient norm: 1.9846, Train loss: 2.15, Train Score: 45.10, Val score: 44.08
+[2021-01-08 06:47:02,460] [TRAIN] - (EPOCH 29) Time: 5612.98, Gradient norm: 1.9777, Train loss: 2.11, Train Score: 45.16, Val score: 44.21
