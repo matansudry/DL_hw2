@@ -61,7 +61,7 @@ def train(model: nn.Module, train_loader: DataLoader, eval_loader: DataLoader, t
         t = time.time()
         metrics = train_utils.get_zeroed_metrics_dict()
         i = 0
-        for i, x in enumerate(tqdm(train_loader)):
+        for i, x in enumerate(train_loader):
             img = x[0]
             ans = x[1]
             ques = x[2]
@@ -143,7 +143,7 @@ def evaluate(model: nn.Module, dataloader: DataLoader) -> Scores:
 
     loss_func = nn.LogSoftmax(dim=1).to("cuda")
 
-    for i, x in enumerate(tqdm(dataloader)):
+    for i, x in enumerate(dataloader):
         img = x[0]
         ans = x[1]
         ques = x[2]
@@ -164,6 +164,8 @@ def evaluate(model: nn.Module, dataloader: DataLoader) -> Scores:
     loss /= len(dataloader.dataset)
     score /= len(dataloader.dataset)
     score *= 100
+
+    print("val loss = ", loss)
 
     return score, loss
 
