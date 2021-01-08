@@ -110,7 +110,7 @@ def train(model: nn.Module, train_loader: DataLoader, eval_loader: DataLoader, t
         model.train(True)
 
         epoch_time = time.time() - t
-        logger.write_epoch_statistics(epoch, epoch_time, metrics['train_loss'], norm,
+        logger.write_epoch_statistics(epoch, epoch_time, norm, metrics['train_loss'], 
                                       metrics['train_score'], metrics['eval_score'])
 
         scalars = {'Accuracy/Train': metrics['train_score'],
